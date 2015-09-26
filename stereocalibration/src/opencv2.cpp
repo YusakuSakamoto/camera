@@ -84,14 +84,12 @@ void *myThread(void *arg)
   const int H = 480;
   Size board_sz1 = Size(board_w, board_h);
   Size board_sz2 = Size(board_w, board_h);
-  vector<vector<Point3f> > object_points1;
+  vector<vector<Point3f> > object_points;
   vector<vector<Point2f> > image_points1;
-  vector<vector<Point3f> > object_points2;
   vector<vector<Point2f> > image_points2;
   vector<Point2f> corners1;
   vector<Point2f> corners2;
-  vector<Point3f> obj1;
-  vector<Point3f> obj2;
+  vector<Point3f> obj;
 
   cv::Mat gray1;
   cv::Mat gray2;
@@ -99,13 +97,12 @@ void *myThread(void *arg)
   cv::Mat frame2;
   cv::Mat out1 = cv::Mat::zeros( W, H, CV_8UC3);
   cv::Mat out2 = cv::Mat::zeros( W, H, CV_8UC3);
-  cv::VideoCapture cap1(0);
-  cv::VideoCapture cap2(1);
+  cv::VideoCapture cap1(1);
+  cv::VideoCapture cap2(0);
 
   for (int j=0; j<board_n; j++)
     {
-	  obj1.push_back(Point3f(j/board_w, j%board_w, 0.0f));
-	  obj2.push_back(Point3f(j/board_w, j%board_w, 0.0f));
+	  obj.push_back(Point3f(j/board_w, j%board_w, 0.0f));
     }
 
   cap1.set(CV_CAP_PROP_FRAME_WIDTH, 640);
@@ -158,7 +155,7 @@ void *myThread(void *arg)
 		cornerSubPix(gray2, corners2, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 		drawChessboardCorners(gray2, board_sz2, corners2, found2);
 	  }
-	
+
 	imshow("corners1", gray1);
 	imshow("corners2", gray2);
 	
@@ -180,9 +177,8 @@ void *myThread(void *arg)
 	  if(found1 != 0 && found2 != 0) {
 	
 		image_points1.push_back(corners1);
-		object_points1.push_back(obj1);
+		object_points.push_back(obj);
 		image_points2.push_back(corners2);
-		object_points2.push_back(obj2);
 	 
 		printf ("Corners stored\n");
 		success++;
@@ -201,36 +197,46 @@ void *myThread(void *arg)
   destroyAllWindows();
   printf("Starting calibration\n");
 
-  Mat intrinsic1 = Mat(3, 3, CV_32FC1);
-  Mat distcoeffs1;
-  vector<Mat> rvecs1;
-  vector<Mat> tvecs1;
+  Mat CM1 = Mat(3, 3, CV_64FC1);
+  Mat CM2 = Mat(3, 3, CV_64FC1);
+  Mat D1, D2;
+  Mat R, T, E, F;
 
-  Mat intrinsic2 = Mat(3, 3, CV_32FC1);
-  Mat distcoeffs2;
-  vector<Mat> rvecs2;
-  vector<Mat> tvecs2;
+  stereoCalibrate(object_points, image_points1, image_points2, CM1, D1, CM2, D2, out1.size(), R, T, E, F, CALIB_FIX_INTRINSIC,TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-6) );
 
-  intrinsic1.at<float>(0, 0) = 1;
-  intrinsic1.at<float>(1, 1) = 1;
-  intrinsic2.at<float>(0, 0) = 1;
-  intrinsic2.at<float>(1, 1) = 1;
-    
-  calibrateCamera(object_points1, image_points1,out1.size(), intrinsic1, distcoeffs1, rvecs1, tvecs1);
-  calibrateCamera(object_points2, image_points2,out2.size(), intrinsic2, distcoeffs2, rvecs2, tvecs2);
+  FileStorage fs1("mystereocalib.yml", FileStorage::WRITE);
+  fs1 << "CM1" << CM1;
+  fs1 << "CM2" << CM2;
+  fs1 << "D1" << D1;
+  fs1 << "D2" << D2;
+  fs1 << "R" << R;
+  fs1 << "T" << T;
+  fs1 << "E" << E;
+  fs1 << "F" << F;
 
-  FileStorage fs1("mycalib1.yml", FileStorage::WRITE);
-  fs1 << "CM1" << intrinsic1;
-  fs1 << "D1" << distcoeffs1;
+  printf("Done Calibration\n");
 
-  FileStorage fs2("mycalib2.yml", FileStorage::WRITE);
-  fs2 << "CM2" << intrinsic2;
-  fs2 << "D2" << distcoeffs2;
+  printf("Starting Rectification\n");
 
-  printf("calibration done\n");
+  Mat R1, R2, P1, P2, Q;
+  stereoRectify(CM1, D1, CM2, D2, out1.size(), R, T, R1, R2, P1, P2, Q);
+  fs1 << "R1" << R1;
+  fs1 << "R2" << R2;
+  fs1 << "P1" << P1;
+  fs1 << "P2" << P2;
+  fs1 << "Q" << Q;
 
-  cv::Mat imgU1;
-  cv::Mat imgU2;
+  printf("Done Rectification\n");
+
+  printf("Applying Undistort\n");
+
+  Mat map1x, map1y, map2x, map2y;
+  Mat imgU1, imgU2;
+
+  initUndistortRectifyMap(CM1, D1, R1, P1, out1.size(), CV_32FC1, map1x, map1y);
+  initUndistortRectifyMap(CM2, D2, R2, P2, out2.size(), CV_32FC1, map2x, map2y);
+
+  printf("Undistort complete\n");
 
   while(1)
     {
@@ -246,8 +252,8 @@ void *myThread(void *arg)
 	  out1.data = pImg1;
 	  out2.data = pImg2;
 	  
-	  undistort(out1, imgU1, intrinsic1, distcoeffs1);
-	  undistort(out2, imgU2, intrinsic2, distcoeffs2);
+	  remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
+	  remap(out2, imgU2, map2x, map2y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
 	  
 
 	  imshow("image1", out1);
@@ -255,12 +261,10 @@ void *myThread(void *arg)
 	  imshow("image2", out2);
 	  imshow("undistort2", imgU2);
 
-	  k = waitKey(5);
-	  if (k == 27)
-        {
-		  break;
-        }
+	  waitKey(1);
+	  if( cameramutex.a == 1 ) break;
     }
+  
   cap1.release();
   cap2.release();
   
