@@ -82,7 +82,8 @@ void *myThread(void *arg)
   unsigned char *pImg1;
   const int W = 640;
   const int H = 480;
-  Size board_sz = Size(board_w, board_h);
+  Size board_sz0 = Size(board_w, board_h);
+  Size board_sz1 = Size(board_w, board_h);
   vector<vector<Point3f> > object_points0;
   vector<vector<Point2f> > image_points0;
   vector<vector<Point3f> > object_points1;
@@ -142,20 +143,20 @@ void *myThread(void *arg)
 	cvtColor(out0, gray0, CV_BGR2GRAY);
 	cvtColor(out1, gray1, CV_BGR2GRAY);
 	
-	found0 = findChessboardCorners(gray0, board_sz, corners0, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
-	found1 = findChessboardCorners(gray1, board_sz, corners1, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+	found0 = findChessboardCorners(gray0, board_sz0, corners0, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+	found1 = findChessboardCorners(gray1, board_sz1, corners1, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 	//===================================
 
 	
 	if (found0)
 	  {
 		cornerSubPix(gray0, corners0, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-		drawChessboardCorners(gray0, board_sz, corners0, found0);
+		drawChessboardCorners(gray0, board_sz0, corners0, found0);
 	  }
 	if (found1)
 	  {
 		cornerSubPix(gray1, corners1, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-		drawChessboardCorners(gray0, board_sz, corners1, found1);
+		drawChessboardCorners(gray1, board_sz1, corners1, found1);
 	  }
 	
 	imshow("corners0", gray0);
@@ -197,6 +198,72 @@ void *myThread(void *arg)
 	  cameramutex.a = 0;
 	}
   }
+  destroyAllWindows();
+  printf("Starting calibration\n");
+
+  Mat intrinsic0 = Mat(3, 3, CV_32FC1);
+  Mat distcoeffs0;
+  vector<Mat> rvecs0;
+  vector<Mat> tvecs0;
+
+  Mat intrinsic1 = Mat(3, 3, CV_32FC1);
+  Mat distcoeffs1;
+  vector<Mat> rvecs1;
+  vector<Mat> tvecs1;
+
+  intrinsic0.at<float>(0, 0) = 1;
+  intrinsic0.at<float>(1, 1) = 1;
+  intrinsic1.at<float>(0, 0) = 1;
+  intrinsic1.at<float>(1, 1) = 1;
+    
+  calibrateCamera(object_points0, image_points0,out0.size(), intrinsic0, distcoeffs0, rvecs0, tvecs0);
+  calibrateCamera(object_points1, image_points1,out1.size(), intrinsic1, distcoeffs1, rvecs1, tvecs1);
+
+  FileStorage fs0("mycalib0.yml", FileStorage::WRITE);
+  fs0 << "CM1" << intrinsic0;
+  fs0 << "D1" << distcoeffs0;
+
+  FileStorage fs1("mycalib1.yml", FileStorage::WRITE);
+  fs1 << "CM1" << intrinsic1;
+  fs1 << "D1" << distcoeffs1;
+
+  printf("calibration done\n");
+
+  cv::Mat imgU0;
+  cv::Mat imgU1;
+
+  while(1)
+    {
+	  cap0 >> frame0;
+	  cap1 >> frame1;
+
+	  pImg0 = frame0.data;
+	  pImg1 = frame1.data;
+	
+	  rotateCW90(pImg0, W,H);
+	  rotateCW90(pImg1, W,H);
+	
+	  out0.data = pImg0;
+	  out1.data = pImg1;
+	  
+	  undistort(out0, imgU0, intrinsic0, distcoeffs0);
+	  undistort(out1, imgU1, intrinsic1, distcoeffs1);
+	  
+
+	  imshow("image0", out0);
+	  imshow("undistort0", imgU0);
+	  imshow("image1", out1);
+	  imshow("undistort1", imgU1);
+
+	  k = waitKey(5);
+	  if (k == 27)
+        {
+		  break;
+        }
+    }
+  cap0.release();
+  cap1.release();
+  
   return NULL;
 }
 
