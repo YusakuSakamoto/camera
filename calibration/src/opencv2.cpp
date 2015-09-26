@@ -69,8 +69,8 @@ void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned 
 
 void *myThread(void *arg)
 {
-  bool found0 = false;
   bool found1 = false;
+  bool found2 = false;
   int success = 0;
   int k = 0;
   int i;
@@ -78,42 +78,42 @@ void *myThread(void *arg)
   int board_w = 10;
   int board_h = 7;
   int board_n = board_w*board_h;
-  unsigned char *pImg0;
   unsigned char *pImg1;
+  unsigned char *pImg2;
   const int W = 640;
   const int H = 480;
-  Size board_sz0 = Size(board_w, board_h);
   Size board_sz1 = Size(board_w, board_h);
-  vector<vector<Point3f> > object_points0;
-  vector<vector<Point2f> > image_points0;
+  Size board_sz2 = Size(board_w, board_h);
   vector<vector<Point3f> > object_points1;
   vector<vector<Point2f> > image_points1;
-  vector<Point2f> corners0;
+  vector<vector<Point3f> > object_points2;
+  vector<vector<Point2f> > image_points2;
   vector<Point2f> corners1;
-  vector<Point3f> obj0;
+  vector<Point2f> corners2;
   vector<Point3f> obj1;
+  vector<Point3f> obj2;
 
-  cv::Mat gray0;
   cv::Mat gray1;
-  cv::Mat frame0;
+  cv::Mat gray2;
   cv::Mat frame1;
-  cv::Mat out0 = cv::Mat::zeros( W, H, CV_8UC3);
+  cv::Mat frame2;
   cv::Mat out1 = cv::Mat::zeros( W, H, CV_8UC3);
-  cv::VideoCapture cap0(0);
-  cv::VideoCapture cap1(1);
+  cv::Mat out2 = cv::Mat::zeros( W, H, CV_8UC3);
+  cv::VideoCapture cap1(0);
+  cv::VideoCapture cap2(1);
 
   for (int j=0; j<board_n; j++)
     {
-	  obj0.push_back(Point3f(j/board_w, j%board_w, 0.0f));
 	  obj1.push_back(Point3f(j/board_w, j%board_w, 0.0f));
+	  obj2.push_back(Point3f(j/board_w, j%board_w, 0.0f));
     }
 
-  cap0.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-  cap0.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
   cap1.set(CV_CAP_PROP_FRAME_WIDTH, 640);
   cap1.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-  cv::namedWindow("Capture0", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+  cap2.set(CV_CAP_PROP_FRAME_WIDTH, 640);
+  cap2.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
   cv::namedWindow("Capture1", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+  cv::namedWindow("Capture2", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
 
   i=0;
   while(success < numBoards) {
@@ -122,45 +122,45 @@ void *myThread(void *arg)
 	string fileright="./data/right0";
 	string png=".jpg";
 	  
-	cap0 >> frame0;
 	cap1 >> frame1;
+	cap2 >> frame2;
 	
-	pImg0 = frame0.data;
 	pImg1 = frame1.data;
+	pImg2 = frame2.data;
 	
-	rotateCW90(pImg0, W,H);
 	rotateCW90(pImg1, W,H);
+	rotateCW90(pImg2, W,H);
 	
-	out0.data = pImg0;
 	out1.data = pImg1;
+	out2.data = pImg2;
 	
-	cv::imshow("Capture0", out0);
 	cv::imshow("Capture1", out1);
+	cv::imshow("Capture2", out2);
 	
 	cvWaitKey(1);
 	//===================================>
 
-	cvtColor(out0, gray0, CV_BGR2GRAY);
 	cvtColor(out1, gray1, CV_BGR2GRAY);
+	cvtColor(out2, gray2, CV_BGR2GRAY);
 	
-	found0 = findChessboardCorners(gray0, board_sz0, corners0, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 	found1 = findChessboardCorners(gray1, board_sz1, corners1, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
+	found2 = findChessboardCorners(gray2, board_sz2, corners2, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FILTER_QUADS);
 	//===================================
 
 	
-	if (found0)
-	  {
-		cornerSubPix(gray0, corners0, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
-		drawChessboardCorners(gray0, board_sz0, corners0, found0);
-	  }
 	if (found1)
 	  {
 		cornerSubPix(gray1, corners1, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
 		drawChessboardCorners(gray1, board_sz1, corners1, found1);
 	  }
+	if (found2)
+	  {
+		cornerSubPix(gray2, corners2, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.1));
+		drawChessboardCorners(gray2, board_sz2, corners2, found2);
+	  }
 	
-	imshow("corners0", gray0);
 	imshow("corners1", gray1);
+	imshow("corners2", gray2);
 	
 	
 	if( cameramutex.a == 1 ) break;
@@ -170,19 +170,19 @@ void *myThread(void *arg)
 	  
 	  std::ostringstream file;
 	  file << fileright << i << png;
-	  cv::imwrite(file.str(), out0 );
+	  cv::imwrite(file.str(), out1 );
 	  
-	  std::ostringstream file1;
-	  file1 << fileleft << i++ << png;
-	  cv::imwrite(file1.str(), out1 );
+	  std::ostringstream file2;
+	  file2 << fileleft << i++ << png;
+	  cv::imwrite(file2.str(), out2 );
 	  cameramutex.unlock();
 	}	else if( cameramutex.a == 3 ){
-	  if(found0 != 0 && found1 != 0) {
+	  if(found1 != 0 && found2 != 0) {
 	
-		image_points0.push_back(corners0);
-		object_points0.push_back(obj0);
 		image_points1.push_back(corners1);
 		object_points1.push_back(obj1);
+		image_points2.push_back(corners2);
+		object_points2.push_back(obj2);
 	 
 		printf ("Corners stored\n");
 		success++;
@@ -201,59 +201,59 @@ void *myThread(void *arg)
   destroyAllWindows();
   printf("Starting calibration\n");
 
-  Mat intrinsic0 = Mat(3, 3, CV_32FC1);
-  Mat distcoeffs0;
-  vector<Mat> rvecs0;
-  vector<Mat> tvecs0;
-
   Mat intrinsic1 = Mat(3, 3, CV_32FC1);
   Mat distcoeffs1;
   vector<Mat> rvecs1;
   vector<Mat> tvecs1;
 
-  intrinsic0.at<float>(0, 0) = 1;
-  intrinsic0.at<float>(1, 1) = 1;
+  Mat intrinsic2 = Mat(3, 3, CV_32FC1);
+  Mat distcoeffs2;
+  vector<Mat> rvecs2;
+  vector<Mat> tvecs2;
+
   intrinsic1.at<float>(0, 0) = 1;
   intrinsic1.at<float>(1, 1) = 1;
+  intrinsic2.at<float>(0, 0) = 1;
+  intrinsic2.at<float>(1, 1) = 1;
     
-  calibrateCamera(object_points0, image_points0,out0.size(), intrinsic0, distcoeffs0, rvecs0, tvecs0);
   calibrateCamera(object_points1, image_points1,out1.size(), intrinsic1, distcoeffs1, rvecs1, tvecs1);
-
-  FileStorage fs0("mycalib0.yml", FileStorage::WRITE);
-  fs0 << "CM1" << intrinsic0;
-  fs0 << "D1" << distcoeffs0;
+  calibrateCamera(object_points2, image_points2,out2.size(), intrinsic2, distcoeffs2, rvecs2, tvecs2);
 
   FileStorage fs1("mycalib1.yml", FileStorage::WRITE);
   fs1 << "CM1" << intrinsic1;
   fs1 << "D1" << distcoeffs1;
 
+  FileStorage fs2("mycalib2.yml", FileStorage::WRITE);
+  fs2 << "CM2" << intrinsic2;
+  fs2 << "D2" << distcoeffs2;
+
   printf("calibration done\n");
 
-  cv::Mat imgU0;
   cv::Mat imgU1;
+  cv::Mat imgU2;
 
   while(1)
     {
-	  cap0 >> frame0;
 	  cap1 >> frame1;
+	  cap2 >> frame2;
 
-	  pImg0 = frame0.data;
 	  pImg1 = frame1.data;
+	  pImg2 = frame2.data;
 	
-	  rotateCW90(pImg0, W,H);
 	  rotateCW90(pImg1, W,H);
+	  rotateCW90(pImg2, W,H);
 	
-	  out0.data = pImg0;
 	  out1.data = pImg1;
+	  out2.data = pImg2;
 	  
-	  undistort(out0, imgU0, intrinsic0, distcoeffs0);
 	  undistort(out1, imgU1, intrinsic1, distcoeffs1);
+	  undistort(out2, imgU2, intrinsic2, distcoeffs2);
 	  
 
-	  imshow("image0", out0);
-	  imshow("undistort0", imgU0);
 	  imshow("image1", out1);
 	  imshow("undistort1", imgU1);
+	  imshow("image2", out2);
+	  imshow("undistort2", imgU2);
 
 	  k = waitKey(5);
 	  if (k == 27)
@@ -261,8 +261,8 @@ void *myThread(void *arg)
 		  break;
         }
     }
-  cap0.release();
   cap1.release();
+  cap2.release();
   
   return NULL;
 }
