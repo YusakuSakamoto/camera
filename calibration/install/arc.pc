@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=/usr/local/bin/arc
+libdir=/usr/local/lib/arc
+includedir=/usr/local/include/arc
+
+Name: arc
+Description: arc library
+Version: 0.0.0
+Requires: 
+Cflags: -I${includedir}
+Libs: -L${libdir} -larc
