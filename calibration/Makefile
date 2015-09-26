@@ -14,14 +14,17 @@ LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-
 
 all: $(OUT)
 
-$(OUT): $(BIN)
-	$(CXX) $< -o $@  $(LIBS) $(FREE_LIBS)
+$(OUT):./bin/calib.o ./bin/main.o
+	$(CXX) ./bin/calib.o ./bin/main.o -o $@  $(LIBS) $(FREE_LIBS)
 
-$(BIN): $(SRC)
-	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
+./bin/main.o: ./src/main.cpp
+	$(CXX) -c ./src/main.cpp $(INCLUDE) $(LIBS) $(CFLAGS) -o ./bin/main.o
+
+./bin/calib.o:./src/calib.cpp
+	$(CXX) -c ./src/calib.cpp $(INCLUDE) $(LIBS) $(CFRAGS) -o ./bin/calib.o
 
 clean:
-	rm -rf $(BIN) ./*.out
+	rm -rf ./bin/calib.o ./bin.main.o ./main.out
 
 install:
 	cd install && make && sh install.sh
