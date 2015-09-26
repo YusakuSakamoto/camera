@@ -74,7 +74,7 @@ void *myThread(void *arg)
   int success = 0;
   int k = 0;
   int i;
-  int numBoards = 10;
+  int numBoards = 100;
   int board_w = 10;
   int board_h = 7;
   int board_n = board_w*board_h;
@@ -97,8 +97,8 @@ void *myThread(void *arg)
   cv::Mat frame2;
   cv::Mat out1 = cv::Mat::zeros( W, H, CV_8UC3);
   cv::Mat out2 = cv::Mat::zeros( W, H, CV_8UC3);
-  cv::VideoCapture cap1(1);
-  cv::VideoCapture cap2(0);
+  cv::VideoCapture cap1(0);
+  cv::VideoCapture cap2(1);
 
   for (int j=0; j<board_n; j++)
     {
@@ -159,27 +159,20 @@ void *myThread(void *arg)
 	imshow("corners1", gray1);
 	imshow("corners2", gray2);
 	
-	
-	if( cameramutex.a == 1 ) break;
-	else if( cameramutex.a == 2 ) {
-	  cameramutex.lock();
-	  cameramutex.a = 0;
-	  
-	  std::ostringstream file;
-	  file << fileright << i << png;
-	  cv::imwrite(file.str(), out1 );
-	  
-	  std::ostringstream file2;
-	  file2 << fileleft << i++ << png;
-	  cv::imwrite(file2.str(), out2 );
-	  cameramutex.unlock();
-	}	else if( cameramutex.a == 3 ){
-	  if(found1 != 0 && found2 != 0) {
-	
+	k = waitKey(10);
+	if (found1 && found2)
+	  {
+		k = waitKey(0);
+	  }
+	if (k == 27)
+	  {
+		break;
+	  }
+	if (k == ' ' && found1 !=0 && found2 != 0)
+	  {
 		image_points1.push_back(corners1);
-		object_points.push_back(obj);
 		image_points2.push_back(corners2);
-	 
+		object_points.push_back(obj);
 		printf ("Corners stored\n");
 		success++;
 
@@ -188,11 +181,6 @@ void *myThread(void *arg)
 			break;
 		  }
 	  }
-	  else{
-		cout << "not found!" << endl;
-	  }
-	  cameramutex.a = 0;
-	}
   }
   destroyAllWindows();
   printf("Starting calibration\n");
