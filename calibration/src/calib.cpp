@@ -2,7 +2,7 @@
 
 myMutex cameramutex;
 
-void calibrate(MY_THREAD_ARG* thread_message){
+void calibrate(){
   bool found1 = false;
   bool found2 = false;
   int success = 0;
@@ -138,7 +138,7 @@ void calibrate(MY_THREAD_ARG* thread_message){
 
   stereoCalibrate(object_points, image_points1, image_points2, CM1, D1, CM2, D2, out1.size(), R, T, E, F, CALIB_FIX_INTRINSIC,TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-6) );
 
-  FileStorage fs1("./data/mystereocalib.yml", FileStorage::WRITE);
+  FileStorage fs1("./data/file.yml", FileStorage::WRITE);
   fs1 << "CM1" << CM1;
   fs1 << "CM2" << CM2;
   fs1 << "D1" << D1;
@@ -168,32 +168,14 @@ void calibrate(MY_THREAD_ARG* thread_message){
 
   initUndistortRectifyMap(CM1, D1, R1, P1, out1.size(), CV_32FC1, map1x, map1y);
   initUndistortRectifyMap(CM2, D2, R2, P2, out2.size(), CV_32FC1, map2x, map2y);
+  fs1 << "map1x" << map1x;
+  fs1 << "map1y" << map1y;
+  fs1 << "map2x" << map2x;
+  fs1 << "map2y" << map2y;
 
   printf("Undistort complete\n");
+  fs1.release();
 
-  
-  CM1.copyTo(thread_message->CM1);
-  CM2.copyTo(thread_message->CM2);
-  D1.copyTo(thread_message->D1);
-  D2.copyTo(thread_message->D2);
-
-  /*
-	R.copyTo(thread_message->R);
-	T.copyTo(thread_message->T);
-	E.copyTo(thread_message->E);
-	F.copyTo(thread_message->F);
-	R1.copyTo(thread_message->R1);
-	R2.copyTo(thread_message->R2);
-	P1.copyTo(thread_message->P1);
-	P2.copyTo(thread_message->P2);
-	Q.copyTo(thread_message->Q);
-  
-	map1x.copyTo(thread_message->map1x);
-	map2x.copyTo(thread_message->map2x);
-	map1y.copyTo(thread_message->map1y);
-	map2y.copyTo(thread_message->map2y);
-  */
-  
   cap1.release();
   cap2.release();  
 }
@@ -249,6 +231,43 @@ void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned 
 
 void *myThread(void *arg)
 {
+  string filename = "./data/file.yml";
+  cout << endl << "Reading: " << endl;
+  FileStorage fs;
+  fs.open(filename, FileStorage::READ);
+
+  Mat CM1 = Mat(3, 3, CV_32FC1);
+  Mat D1;
+  Mat CM2 = Mat(3, 3, CV_32FC1);
+  Mat D2;
+  Mat R, T, E, F;
+  Mat R1, R2, P1, P2, Q;
+  Mat map1x;
+  Mat map1y;
+  Mat map2x;
+  Mat map2y;
+
+
+  fs["CM1"] >> CM1;
+  fs["D1"] >> D1;
+  fs["CM2"] >> CM2;
+  fs["D2"] >> D2;
+  fs["R"] >> R;
+  fs["T"] >> T;
+  fs["E"] >> E;
+  fs["F"] >> F;
+  fs["R1"] >> R1;
+  fs["R2"] >> R2;
+  fs["P1"] >> P1;
+  fs["P2"] >> P2;
+  fs["Q"] >> Q;
+  fs["map1x"] >> map1x;
+  fs["map1y"] >> map1y;
+  fs["map2x"] >> map2x;
+  fs["map2y"] >> map2y;
+
+
+  
   int i=0;
   MY_THREAD_ARG *thread_message =(MY_THREAD_ARG*)arg;
   const int W = 640;
@@ -268,7 +287,7 @@ void *myThread(void *arg)
   string png=".jpg";
 
   while(1)
-    {
+	{
 	  cap1 >> frame1;
 	  cap2 >> frame2;
 
@@ -281,8 +300,8 @@ void *myThread(void *arg)
 	  out1.data = pImg1;
 	  out2.data = pImg2;
 	  
-	  undistort(out1, imgU1, thread_message->CM1, thread_message->D1);
-	  undistort(out2, imgU2, thread_message->CM2, thread_message->D2);
+	  undistort(out1, imgU1, CM1,D1);
+	  undistort(out2, imgU2, CM2,D2);
 	  /*
 		remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
 		remap(out2, imgU2, map2x, map2y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
