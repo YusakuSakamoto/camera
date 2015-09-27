@@ -22,9 +22,3 @@ $(BIN): $(SRC)
 
 clean:
 	rm -rf $(BIN) ./*.out
-
-install:
-	cd install && make && sh install.sh
-
-remove:
-	cd install && make clean && cd ../sample && make clean
