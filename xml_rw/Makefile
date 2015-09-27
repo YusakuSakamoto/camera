@@ -1,4 +1,4 @@
-NAME	= write
+NAME	= main
 CXX 	= g++
 
 OUT		= $(NAME:%=%.out)
