@@ -45,8 +45,8 @@ void calibrate(){
 
   while(success < numBoards) {
 	//=============================
-	string fileleft="./data/left0";
-	string fileright="./data/right0";
+	string fileleft="../data/left0";
+	string fileright="../data/right0";
 	string png=".jpg";
 	  
 	cap1 >> frame1;
@@ -138,7 +138,7 @@ void calibrate(){
 
   stereoCalibrate(object_points, image_points1, image_points2, CM1, D1, CM2, D2, out1.size(), R, T, E, F, CALIB_FIX_INTRINSIC,TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-6) );
 
-  FileStorage fs1("./data/file.yml", FileStorage::WRITE);
+  FileStorage fs1("../data/file.yml", FileStorage::WRITE);
   fs1 << "CM1" << CM1;
   fs1 << "CM2" << CM2;
   fs1 << "D1" << D1;
@@ -236,7 +236,7 @@ void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned 
 
 void *myThread(void *arg)
 {
-  string filename = "./data/file.yml";
+  string filename = "../data/file.yml";
   cout << endl << "Reading: " << endl;
   FileStorage fs;
   fs.open(filename, FileStorage::READ);
@@ -294,8 +294,8 @@ void *myThread(void *arg)
   cv::Mat disp8;
   cv::VideoCapture cap1(LEFT);
   cv::VideoCapture cap2(RIGHT);
-  string fileleft="./data/left0";
-  string fileright="./data/right0";
+  string fileleft="../data/left0";
+  string fileright="../data/right0";
   string png=".jpg";
   
   /*
