@@ -289,8 +289,7 @@ void *myThread(void *arg)
   cv::Mat out2 = cv::Mat::zeros( W, H, CV_8UC3);
   cv::Mat imgU1;
   cv::Mat imgU2;
-  cv::Mat disparity;
-  cv::Mat vdisparity;
+  cv::Mat disparity = Mat(480,640,CV_16S);
   cv::Mat disp8;
   cv::VideoCapture cap1(LEFT);
   cv::VideoCapture cap2(RIGHT);
@@ -298,52 +297,63 @@ void *myThread(void *arg)
   string fileright="./data/right0";
   string png=".jpg";
 
-  Ptr<StereoBM> bm = StereoBM::create(16, 9);
+  int ndisparities = 16*5;   
+  int SADWindowSize = 11;//奇数でなければならない 
+  Ptr<StereoBM> bm = StereoBM::create(ndisparities,SADWindowSize);
+  cv::Mat vdisparity = Mat( 480, 640, CV_8UC1 );
   bm->setROI1(roi1);
   bm->setROI2(roi2);
   bm->setPreFilterCap(31);
-  bm->setMinDisparity(0);
-  bm->setTextureThreshold(10);
-  bm->setUniquenessRatio(15);
-  bm->setSpeckleWindowSize(100);
-  bm->setSpeckleRange(32);
-  bm->setDisp12MaxDiff(1);  
-
-
+  bm->setBlockSize(SADWindowSize > 0 ? SADWindowSize : 9);
+  bm->setMinDisparity(30);
+  bm->setTextureThreshold(1000);
+  // bm->setUniquenessRatio(10);
+  bm->setSpeckleWindowSize(150);
+  bm->setSpeckleRange(2);
+  //bm->setDisp12MaxDiff(-1);
+  /*
+    minDisparity – Minimum possible disparity value.
+    numDisparities – Maximum disparity minus minimum disparity. This parameter must be divisible by 16.
+    SADWindowSize – Matched block size. It must be an odd number >=1 .
+    disp12MaxDiff – Maximum allowed difference (in integer pixel units) in the left-right disparity check.
+    preFilterCap – Truncation value for the prefiltered image pixels.
+    uniquenessRatio – Margin in percentage by which the best (minimum) computed cost function value should “win” the second best value to consider the found match correct. Normally, a value within the 5-15 range is good enough.
+    speckleWindowSize – Maximum size of smooth disparity regions to consider their noise speckles and invalidate.
+    speckleRange – Maximum disparity variation within each connected component.
+  */
   while(1)
 	{
+	  //90CW rotation
+	  //======================
 	  cap1 >> frame1;
 	  cap2 >> frame2;
-
 	  pImg1 = frame1.data;
 	  pImg2 = frame2.data;
-	
 	  rotateCW90(pImg1, W,H);
-	  rotateCW90(pImg2, W,H);
-	
+	  rotateCW90(pImg2, W,H);	
 	  out1.data = pImg1;
 	  out2.data = pImg2;
-	  /*
-		undistort(out1, imgU1, CM1,D1);
-		undistort(out2, imgU2, CM2,D2);
-	  */
+	  //==========================
+
 	  remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
 	  remap(out2, imgU2, map2x, map2y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
 
 	  cv::Mat grayU1;
 	  cv::Mat grayU2;
-	  cv::Mat U1;
-	  cv::Mat U2;
-
 	  
 	  cvtColor(imgU1, grayU1,CV_RGB2GRAY);
 	  cvtColor(imgU2, grayU2,CV_RGB2GRAY);
-	  grayU1.convertTo(U1,CV_8UC1,1);
-	  grayU2.convertTo(U2,CV_8UC1,1);
+	  bm->compute(grayU1, grayU2, disparity);
 
-	  bm->compute(U1, U2, disparity);
-	  imshow("undistort1", imgU1);
-	  imshow("undistort2", imgU2);
+	  //-- Check its extreme values
+	  double minVal; double maxVal;
+	  minMaxLoc( disparity, &minVal, &maxVal );
+	  printf("Min disp: %f Max value: %f \n", minVal, maxVal);
+
+	  //-- 4. Display it as a CV_8UC1 image
+	  disparity.convertTo( vdisparity, CV_8UC1, 255/(maxVal - maxVal));
+	  imshow("undistort1", grayU1);
+	  imshow("undistort2", grayU2);
 	  imshow("disp", disparity);
 
 	  waitKey(5);

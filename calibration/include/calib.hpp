@@ -17,7 +17,7 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/core/utility.hpp"
 
-#define NUMBOARD 10
+#define NUMBOARD 20
 #define BOARD_W 10
 #define BOARD_H 7
 #define LEFT 1
