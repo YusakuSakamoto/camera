@@ -1,4 +1,4 @@
-NAME	= opencv2
+NAME	= main
 CXX 	= g++
 
 OUT		= $(NAME:%=%.out)

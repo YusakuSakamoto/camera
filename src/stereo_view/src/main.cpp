@@ -1,41 +1,8 @@
-#include <iostream>
-#include <stdio.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <vector>
-#include <cmath>
-#include <sstream>
-#include <Like_terminal.h>
-#include <opencv2/core/core.hpp>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/video/video.hpp>
-
-#include <string>
-
+#include "../../config/raspberry.hpp"
 
 using namespace std;
 using namespace cv;
 
-class myMutex {
-public:
-  int a;
-  myMutex() {
-	pthread_mutex_init( &m_mutex, NULL );
-  }
-  void lock() {
-	pthread_mutex_lock( &m_mutex );
-  }
-  void unlock() {
-	pthread_mutex_unlock( &m_mutex );
-  }
-private:
-  pthread_mutex_t m_mutex;
-};
-
-void *myThread(void *arg);
-void *myKey(void *arg);
 myMutex cameramutex;
 
 void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height)
@@ -64,9 +31,8 @@ void *myThread(void *arg)
 {
   unsigned char *pImg0;
   unsigned char *pImg1;
-  const int W = 640;
-  const int H = 480;
   int i;
+
   cv::Mat frame0;
   cv::Mat frame1;
   cv::Mat out0 = cv::Mat::zeros( W, H, CV_8UC3);
@@ -74,10 +40,10 @@ void *myThread(void *arg)
   cv::VideoCapture cap0(0);
   cv::VideoCapture cap1(1);
 
-  cap0.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-  cap0.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-  cap1.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-  cap1.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+  cap0.set(CV_CAP_PROP_FRAME_WIDTH, W);
+  cap0.set(CV_CAP_PROP_FRAME_HEIGHT,H);
+  cap1.set(CV_CAP_PROP_FRAME_WIDTH, W);
+  cap1.set(CV_CAP_PROP_FRAME_HEIGHT,H);
   cv::namedWindow("Capture0", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
   cv::namedWindow("Capture1", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
 
@@ -136,6 +102,8 @@ void *myKey(void *arg)
   end();
   return NULL;  
 }
+
+
 
 int main(int argc, char *argv[])
 {
