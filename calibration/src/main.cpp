@@ -7,7 +7,7 @@ int main(int argc, char *argv[])
   pthread_t thread_c;
   void *thread_return;
   MY_THREAD_ARG thread_message;
-  //  calibrate();
+  //calibrate();
 	
   status = pthread_create(&thread_a, NULL, myThread, &thread_message);
   if(status != 0 )exit(1);
