@@ -40,11 +40,18 @@ private:
 };
 
 typedef struct {
-  Mat intrinsic1 = Mat(3, 3, CV_32FC1);
-  Mat distcoeffs1;
-  Mat intrinsic2 = Mat(3, 3, CV_32FC1);
-  Mat distcoeffs2;
+  Mat CM1 = Mat(3, 3, CV_32FC1);
+  Mat D1;
+  Mat CM2 = Mat(3, 3, CV_32FC1);
+  Mat D2;
+  Mat R, T, E, F;
+  Mat R1, R2, P1, P2, Q;
+  Mat map1x;
+  Mat map1y;
+  Mat map2x;
+  Mat map2y;
 } MY_THREAD_ARG;
+
 
 void *myThread(void *arg);
 void *myKey(void *arg);

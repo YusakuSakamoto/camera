@@ -120,24 +120,80 @@ void calibrate(MY_THREAD_ARG* thread_message){
   vector<Mat> rvecs2;
   vector<Mat> tvecs2;
 
-  thread_message->intrinsic1.at<float>(0, 0) = 1;
-  thread_message->intrinsic1.at<float>(1, 1) = 1;
-  thread_message->intrinsic2.at<float>(0, 0) = 1;
-  thread_message->intrinsic2.at<float>(1, 1) = 1;
+  Mat CM1 = Mat(3, 3, CV_32FC1);
+  Mat D1;
+  Mat CM2 = Mat(3, 3, CV_32FC1);
+  Mat D2;
+
+  CM1.at<float>(0, 0) = 1;
+  CM1.at<float>(1, 1) = 1;
+  CM2.at<float>(0, 0) = 1;
+  CM2.at<float>(1, 1) = 1;
     
-  calibrateCamera(object_points, image_points1,out1.size(), thread_message->intrinsic1, thread_message->distcoeffs1, rvecs1, tvecs1);
-  calibrateCamera(object_points, image_points2,out2.size(), thread_message->intrinsic2, thread_message->distcoeffs2, rvecs2, tvecs2);
+  calibrateCamera(object_points, image_points1,out1.size(), CM1, D1, rvecs1, tvecs1);
+  
+  calibrateCamera(object_points, image_points2,out2.size(), CM2, D2, rvecs2, tvecs2);
 
-  FileStorage fs1("mycalib1.yml", FileStorage::WRITE);
-  fs1 << "CM1" << thread_message->intrinsic1;
-  fs1 << "D1" << thread_message->distcoeffs1;
+  Mat R, T, E, F;
 
-  FileStorage fs2("mycalib2.yml", FileStorage::WRITE);
-  fs2 << "CM2" << thread_message->intrinsic2;
-  fs2 << "D2" << thread_message->distcoeffs2;
+  stereoCalibrate(object_points, image_points1, image_points2, CM1, D1, CM2, D2, out1.size(), R, T, E, F, CALIB_FIX_INTRINSIC,TermCriteria(TermCriteria::COUNT+TermCriteria::EPS, 100, 1e-6) );
 
-  printf("calibration done\n");
+  FileStorage fs1("./data/mystereocalib.yml", FileStorage::WRITE);
+  fs1 << "CM1" << CM1;
+  fs1 << "CM2" << CM2;
+  fs1 << "D1" << D1;
+  fs1 << "D2" << D2;
+  fs1 << "R" << R;
+  fs1 << "T" << T;
+  fs1 << "E" << E;
+  fs1 << "F" << F;
+  
+  printf("Done Calibration\n");
 
+  printf("Starting Rectification\n");
+
+  Mat R1, R2, P1, P2, Q;
+  stereoRectify(CM1, D1, CM2, D2, out1.size(), R, T, R1, R2, P1, P2, Q);
+  fs1 << "R1" << R1;
+  fs1 << "R2" << R2;
+  fs1 << "P1" << P1;
+  fs1 << "P2" << P2;
+  fs1 << "Q" << Q;
+
+  printf("Done Rectification\n");
+
+  printf("Applying Undistort\n");
+
+  Mat map1x, map1y, map2x, map2y;
+
+  initUndistortRectifyMap(CM1, D1, R1, P1, out1.size(), CV_32FC1, map1x, map1y);
+  initUndistortRectifyMap(CM2, D2, R2, P2, out2.size(), CV_32FC1, map2x, map2y);
+
+  printf("Undistort complete\n");
+
+  
+  CM1.copyTo(thread_message->CM1);
+  CM2.copyTo(thread_message->CM2);
+  D1.copyTo(thread_message->D1);
+  D2.copyTo(thread_message->D2);
+
+  /*
+	R.copyTo(thread_message->R);
+	T.copyTo(thread_message->T);
+	E.copyTo(thread_message->E);
+	F.copyTo(thread_message->F);
+	R1.copyTo(thread_message->R1);
+	R2.copyTo(thread_message->R2);
+	P1.copyTo(thread_message->P1);
+	P2.copyTo(thread_message->P2);
+	Q.copyTo(thread_message->Q);
+  
+	map1x.copyTo(thread_message->map1x);
+	map2x.copyTo(thread_message->map2x);
+	map1y.copyTo(thread_message->map1y);
+	map2y.copyTo(thread_message->map2y);
+  */
+  
   cap1.release();
   cap2.release();  
 }
@@ -225,9 +281,12 @@ void *myThread(void *arg)
 	  out1.data = pImg1;
 	  out2.data = pImg2;
 	  
-	  undistort(out1, imgU1, thread_message->intrinsic1, thread_message->distcoeffs1);
-	  undistort(out2, imgU2, thread_message->intrinsic2, thread_message->distcoeffs2);
-	  
+	  undistort(out1, imgU1, thread_message->CM1, thread_message->D1);
+	  undistort(out2, imgU2, thread_message->CM2, thread_message->D2);
+	  /*
+		remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
+		remap(out2, imgU2, map2x, map2y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
+	  */
 
 	  //imshow("image1", out1);
 	  imshow("undistort1", imgU1);

@@ -1,0 +1,7 @@
+help display.
+
+プログラムを終了する　--> press "a"
+スナップショット　　　--> press "b"
+画面をクリアする　　　--> press "c"
+
+help terminated.

@@ -1,0 +1,11 @@
+prefix=/usr/local
+exec_prefix=/usr/local/bin/sakamoto
+libdir=/usr/local/lib/sakamoto
+includedir=/usr/local/include/sakamoto
+
+Name: sakamoto
+Description: sakamoto library
+Version: 0.0.0
+Requires: 
+Cflags: -I${includedir}
+Libs: -L${libdir} -lsakamoto

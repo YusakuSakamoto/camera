@@ -8,7 +8,7 @@ SRC		= src/$(NAME:%=%.cpp)
 INCLUDE = -I/usr/local/include/libfreenect
 FREE_LIBS = -L/usr/local/lib -lfreenect
 CFLAGS 	= -fPIC -g -Wall `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0` `pkg-config sakamoto --cflags --libs` -lpthread
-LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-config sakamoto --cflags --libs` -lpthread
+LIBS 	= -g `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-config sakamoto --cflags --libs` -lpthread
 
 .PHONY:install
 
