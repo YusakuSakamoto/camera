@@ -56,4 +56,4 @@ typedef struct {
 void *myThread(void *arg);
 void *myKey(void *arg);
 void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height);
-void calibrate(MY_THREAD_ARG* thread_message);
+void calibrate();

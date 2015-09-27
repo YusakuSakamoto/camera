@@ -1,7 +1,0 @@
-help display.
-
-プログラムを終了する　--> press "q or Q"
-スナップショット　　　--> press "s"
-画面をクリアする　　　--> press "c"
-
-help terminated.
