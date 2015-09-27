@@ -15,10 +15,13 @@
 
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/core/utility.hpp"
 
 #define NUMBOARD 10
 #define BOARD_W 10
 #define BOARD_H 7
+#define LEFT 1
+#define RIGHT 0
 
 using namespace std;
 using namespace cv;

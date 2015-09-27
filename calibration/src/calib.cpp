@@ -30,8 +30,8 @@ void calibrate(){
   cv::Mat frame2;
   cv::Mat out1 = cv::Mat::zeros( W, H, CV_8UC3);
   cv::Mat out2 = cv::Mat::zeros( W, H, CV_8UC3);
-  cv::VideoCapture cap1(0);
-  cv::VideoCapture cap2(1);
+  cv::VideoCapture cap1(LEFT);
+  cv::VideoCapture cap2(RIGHT);
 
   for (int j=0; j<board_n; j++)
     {
@@ -152,8 +152,11 @@ void calibrate(){
 
   printf("Starting Rectification\n");
 
+  Rect roi1, roi2;
   Mat R1, R2, P1, P2, Q;
-  stereoRectify(CM1, D1, CM2, D2, out1.size(), R, T, R1, R2, P1, P2, Q);
+  
+  stereoRectify( CM1, D1, CM2, D2, out1.size(), R, T, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, -1, out1.size(), &roi1, &roi2 );
+
   fs1 << "R1" << R1;
   fs1 << "R2" << R2;
   fs1 << "P1" << P1;
@@ -172,6 +175,8 @@ void calibrate(){
   fs1 << "map1y" << map1y;
   fs1 << "map2x" << map2x;
   fs1 << "map2y" << map2y;
+  fs1 << "roi1" << roi1;
+  fs1 << "roi2" << roi2;
 
   printf("Undistort complete\n");
   fs1.release();
@@ -246,6 +251,8 @@ void *myThread(void *arg)
   Mat map1y;
   Mat map2x;
   Mat map2y;
+  Rect roi1;
+  Rect roi2;
 
 
   fs["CM1"] >> CM1;
@@ -265,6 +272,8 @@ void *myThread(void *arg)
   fs["map1y"] >> map1y;
   fs["map2x"] >> map2x;
   fs["map2y"] >> map2y;
+  fs["roi1"] >> roi1;
+  fs["roi2"] >> roi2;
 
 
   
@@ -280,11 +289,26 @@ void *myThread(void *arg)
   cv::Mat out2 = cv::Mat::zeros( W, H, CV_8UC3);
   cv::Mat imgU1;
   cv::Mat imgU2;
-  cv::VideoCapture cap1(0);
-  cv::VideoCapture cap2(1);
+  cv::Mat disparity;
+  cv::Mat vdisparity;
+  cv::Mat disp8;
+  cv::VideoCapture cap1(LEFT);
+  cv::VideoCapture cap2(RIGHT);
   string fileleft="./data/left0";
   string fileright="./data/right0";
   string png=".jpg";
+
+  Ptr<StereoBM> bm = StereoBM::create(16, 9);
+  bm->setROI1(roi1);
+  bm->setROI2(roi2);
+  bm->setPreFilterCap(31);
+  bm->setMinDisparity(0);
+  bm->setTextureThreshold(10);
+  bm->setUniquenessRatio(15);
+  bm->setSpeckleWindowSize(100);
+  bm->setSpeckleRange(32);
+  bm->setDisp12MaxDiff(1);  
+
 
   while(1)
 	{
@@ -299,18 +323,28 @@ void *myThread(void *arg)
 	
 	  out1.data = pImg1;
 	  out2.data = pImg2;
-	  
-	  undistort(out1, imgU1, CM1,D1);
-	  undistort(out2, imgU2, CM2,D2);
 	  /*
-		remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
-		remap(out2, imgU2, map2x, map2y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
+		undistort(out1, imgU1, CM1,D1);
+		undistort(out2, imgU2, CM2,D2);
 	  */
+	  remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
+	  remap(out2, imgU2, map2x, map2y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
 
-	  //imshow("image1", out1);
+	  cv::Mat grayU1;
+	  cv::Mat grayU2;
+	  cv::Mat U1;
+	  cv::Mat U2;
+
+	  
+	  cvtColor(imgU1, grayU1,CV_RGB2GRAY);
+	  cvtColor(imgU2, grayU2,CV_RGB2GRAY);
+	  grayU1.convertTo(U1,CV_8UC1,1);
+	  grayU2.convertTo(U2,CV_8UC1,1);
+
+	  bm->compute(U1, U2, disparity);
 	  imshow("undistort1", imgU1);
-	  //imshow("image2", out2);
 	  imshow("undistort2", imgU2);
+	  imshow("disp", disparity);
 
 	  waitKey(5);
 	  if( cameramutex.a == 1 ) break;
