@@ -108,7 +108,7 @@ void *myKey(void *arg)
   return NULL;  
 }
 
-
+/*
 void exclode_clr(cv::Mat &input, cv::Mat &output){
   int a,x,y;
   
@@ -268,7 +268,8 @@ void kalman_setting(cv::KalmanFilter& kf){
   cv::setIdentity(kf.measurementNoiseCov, cv::Scalar(1e-1));
 
 }
-
+*/
+/*
 void calibrate(){
   bool found1 = false;
   bool found2 = false;
@@ -449,7 +450,8 @@ void calibrate(){
   cap1.release();
   cap2.release();  
 }
-
+*/
+/*
 void *mycalibration(void *arg)
 {
   cout << endl << "Reading: " << endl;
@@ -534,7 +536,7 @@ void *mycalibration(void *arg)
     uniquenessRatio – Margin in percentage by which the best (minimum) computed cost function value should “win” the second best value to consider the found match correct. Normally, a value within the 5-15 range is good enough.
     speckleWindowSize – Maximum size of smooth disparity regions to consider their noise speckles and invalidate.
     speckleRange – Maximum disparity variation within each connected component.*/
-
+/*
   CvStereoBMState *BMState = cvCreateStereoBMState();
   BMState->preFilterSize = 41;
   BMState->preFilterCap = 31;
@@ -579,6 +581,7 @@ void *mycalibration(void *arg)
 		//-- 4. Display it as a CV_8UC1 image
 		disparity.convertTo( vdisparity, CV_8UC1, 255/(maxVal - maxVal));
 	  */
+/*
 	  //cvFindStereoCorrespondenceBM(&grayU1,&grayU2,&disparity,BMState);
 	  //cvNormalize(&disparity,&vdisparity,0,256,CV_MINMAX);
 	  imshow("undistort1", grayU1);
@@ -606,3 +609,4 @@ void *mycalibration(void *arg)
   return NULL;
 }
 
+*/

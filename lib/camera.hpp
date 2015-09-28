@@ -16,16 +16,17 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/core/utility.hpp"
 
+/*
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
 //#define __RASPBERRY__
 #define __NORMAL__
 #endif
-
+*/
 using namespace std;
 using namespace cv;
 
-
+/*
 #if defined(__RASPBERRY__) && !defined(__RASPBERRY_2__)
 #define __RASPBERRY_2__
 #define W 320
@@ -55,23 +56,12 @@ public:
 private:
   pthread_mutex_t m_mutex;
 };
-
-typedef struct {
-  cv::Mat CM1 = cv::Mat(3, 3, type);
-  cv::Mat D1;
-  cv::Mat CM2 = cv::Mat(3, 3, type);
-  cv::Mat D2;
-  cv::Mat R, T, E, F;
-  cv::Mat R1, R2, P1, P2, Q;
-  cv::Mat map1x;
-  cv::Mat map1y;
-  cv::Mat map2x;
-  cv::Mat map2y;
-} MY_THREAD_ARG;
 #endif
+*/
 
-#if defined(__NORMAL__) && !defined(__NORMAL_2__)
-#define __NORMAL_2__
+
+//#if defined(__NORMAL__) && !defined(__NORMAL_2__)
+//#define __NORMAL_2__
 #define W 640
 #define H 480
 #define type CV_32F
@@ -84,6 +74,7 @@ typedef struct {
 #define BOARD_H 7
 #define LEFT 0
 #define RIGHT 1
+
 class myMutex {
 public:
   int a;
@@ -99,20 +90,7 @@ public:
 private:
   pthread_mutex_t m_mutex;
 };
-
-typedef struct {
-  cv::Mat CM1 = cv::Mat(3, 3, type);
-  cv::Mat D1;
-  cv::Mat CM2 = cv::Mat(3, 3, type);
-  cv::Mat D2;
-  cv::Mat R, T, E, F;
-  cv::Mat R1, R2, P1, P2, Q;
-  cv::Mat map1x;
-  cv::Mat map1y;
-  cv::Mat map2x;
-  cv::Mat map2y;
-} MY_THREAD_ARG;
-#endif
+//#endif
 
 
 
@@ -120,13 +98,12 @@ typedef struct {
 void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height);
 void *myThread(void *arg);
 void *myKey(void *arg);
-void exclode_clr(cv::Mat&, cv::Mat&);
-void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
-void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
-int kalman_find(cv::Mat&,vector<cv::Rect>&,bool&,cv::KalmanFilter&,cv::Mat&);
-int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vector<cv::Rect>&);
-int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
-void kalman_setting(cv::KalmanFilter& kf);
-void calibrate();
-void *mycalibration(void *arg);
-
+//void exclode_clr(cv::Mat&, cv::Mat&);
+//void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
+//void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
+//int kalman_find(cv::Mat&,vector<cv::Rect>&,bool&,cv::KalmanFilter&,cv::Mat&);
+//int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vector<cv::Rect>&);
+//int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
+//void kalman_setting(cv::KalmanFilter& kf);
+//void calibrate();
+//void *mycalibration(void *arg);
