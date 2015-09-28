@@ -18,8 +18,8 @@
 
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
-#define __RASPBERRY__
-//#define __NORMAL__
+//#define __RASPBERRY__
+#define __NORMAL__
 #endif
 
 using namespace std;
@@ -82,9 +82,8 @@ typedef struct {
 #define NUMBOARD 20
 #define BOARD_W 10
 #define BOARD_H 7
-#define LEFT 1
-#define RIGHT 0
-#ebdif __NORMAL_2__
+#define LEFT 0
+#define RIGHT 1
 class myMutex {
 public:
   int a;
