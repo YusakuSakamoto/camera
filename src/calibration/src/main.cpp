@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   MY_THREAD_ARG thread_message;
   //calibrate();
 	
-  status = pthread_create(&thread_a, NULL, myThread, &thread_message);
+  status = pthread_create(&thread_a, NULL, mycalibration, &thread_message);
   if(status != 0 )exit(1);
   status=pthread_create(&thread_c, NULL, myKey,NULL);
   if(status != 0 )exit(1);

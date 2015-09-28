@@ -7,21 +7,22 @@ myMutex cameramutex;
 
 void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height)
 {
+  int i;
+  unsigned int y;
+  unsigned int x;
+  int offset;
+  int destinationColumn;
   const unsigned int sizeBuffer = width * height * 3; 
   unsigned char *tempBuffer = new unsigned char[sizeBuffer];
 
-  for (int y = 0, destinationColumn = height - 1; y < height; ++y, --destinationColumn)
-    {
-	  int offset = y * width;
-
-	  for (int x = 0; x < width; x++)
-        {
-		  for (int i = 0; i < 3; i++) { // RGB
-			tempBuffer[(x * height + destinationColumn) * 3 + i] = buffer[(offset + x) * 3 + i];
-		  }
-        }
-    }
-
+  for (y = 0, destinationColumn = height - 1; y < height; ++y, --destinationColumn){
+	offset = y * width;
+	for (x = 0; x < width; x++){
+	  for (i = 0; i < 3; i++) { // RGB
+		tempBuffer[(x * height + destinationColumn) * 3 + i] = buffer[(offset + x) * 3 + i];
+	  }
+	}
+  }
   memcpy(buffer, tempBuffer, sizeBuffer);
   delete[] tempBuffer;
 }
@@ -313,7 +314,6 @@ void *mycalibration(void *arg)
 
   
   int i=0;
-  MY_THREAD_ARG *thread_message =(MY_THREAD_ARG*)arg;
   unsigned char *pImg1;
   unsigned char *pImg2;
   cv::Mat frame1;
@@ -347,16 +347,14 @@ void *mycalibration(void *arg)
   bm->setSpeckleRange(2);
   //bm->setDisp12MaxDiff(-1);
 	
-  /*
-    minDisparity – Minimum possible disparity value.
+  minDisparity – Minimum possible disparity value.
     numDisparities – Maximum disparity minus minimum disparity. This parameter must be divisible by 16.
     SADWindowSize – Matched block size. It must be an odd number >=1 .
     disp12MaxDiff – Maximum allowed difference (in integer pixel units) in the left-right disparity check.
     preFilterCap – Truncation value for the prefiltered image pixels.
     uniquenessRatio – Margin in percentage by which the best (minimum) computed cost function value should “win” the second best value to consider the found match correct. Normally, a value within the 5-15 range is good enough.
     speckleWindowSize – Maximum size of smooth disparity regions to consider their noise speckles and invalidate.
-    speckleRange – Maximum disparity variation within each connected component.
-  */
+    speckleRange – Maximum disparity variation within each connected component.*/
 
   CvStereoBMState *BMState = cvCreateStereoBMState();
   BMState->preFilterSize = 41;

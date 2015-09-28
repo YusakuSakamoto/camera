@@ -6,7 +6,7 @@ OUT		= $(NAME)
 
 INCLUDE = -I/usr/local/include/libfreenect
 FREE_LIBS = -L/usr/local/lib -lfreenect
-CFLAGS 	= -fPIC -g -Wall `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
+CFLAGS 	= -fPIC `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
 LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
 
 all: main

@@ -22,7 +22,12 @@
 //#define __NORMAL__
 #endif
 
-#ifdef __RASPBERRY__
+using namespace std;
+using namespace cv;
+
+
+#if defined(__RASPBERRY__) && !defined(__RASPBERRY_2__)
+#define __RASPBERRY_2__
 #define W 320
 #define H 240
 #define type CV_32F
@@ -35,29 +40,6 @@
 #define BOARD_H 7
 #define LEFT 1
 #define RIGHT 0
-#endif
-
-#ifdef __NORMAL__
-#define W 640
-#define H 480
-#define type CV_32F
-#define stateSize 6
-#define measSize 4
-#define MINIMUM_SQUARE 1600
-#define MINIMUM_TOMATO_RATIO 0.75
-#define NUMBOARD 20
-#define BOARD_W 10
-#define BOARD_H 7
-#define LEFT 1
-#define RIGHT 0
-#ebdif
-
-#endif
-
-
-using namespace std;
-using namespace cv;
-
 class myMutex {
 public:
   int a;
@@ -75,9 +57,54 @@ private:
 };
 
 typedef struct {
-  Mat CM1 = Mat(3, 3, CV_32FC1);
+  cv::Mat CM1 = cv::Mat(3, 3, type);
+  cv::Mat D1;
+  cv::Mat CM2 = cv::Mat(3, 3, type);
+  cv::Mat D2;
+  cv::Mat R, T, E, F;
+  cv::Mat R1, R2, P1, P2, Q;
+  cv::Mat map1x;
+  cv::Mat map1y;
+  cv::Mat map2x;
+  cv::Mat map2y;
+} MY_THREAD_ARG;
+#endif
+
+#if defined(__NORMAL__) && !defined(__NORMAL_2__)
+#define __NORMAL_2__
+#define W 640
+#define H 480
+#define type CV_32F
+#define stateSize 6
+#define measSize 4
+#define MINIMUM_SQUARE 1600
+#define MINIMUM_TOMATO_RATIO 0.75
+#define NUMBOARD 20
+#define BOARD_W 10
+#define BOARD_H 7
+#define LEFT 1
+#define RIGHT 0
+#ebdif __NORMAL_2__
+class myMutex {
+public:
+  int a;
+  myMutex() {
+	pthread_mutex_init( &m_mutex, NULL );
+  }
+  void lock() {
+	pthread_mutex_lock( &m_mutex );
+  }
+  void unlock() {
+	pthread_mutex_unlock( &m_mutex );
+  }
+private:
+  pthread_mutex_t m_mutex;
+};
+
+typedef struct {
+  Mat CM1 = Mat(3, 3, type);
   Mat D1;
-  Mat CM2 = Mat(3, 3, CV_32FC1);
+  Mat CM2 = Mat(3, 3, type);
   Mat D2;
   Mat R, T, E, F;
   Mat R1, R2, P1, P2, Q;
@@ -86,6 +113,10 @@ typedef struct {
   Mat map2x;
   Mat map2y;
 } MY_THREAD_ARG;
+#endif
+
+
+
 
 void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height);
 void *myThread(void *arg);
@@ -99,3 +130,4 @@ int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
 void kalman_setting(cv::KalmanFilter& kf);
 void calibrate();
 void *mycalibration(void *arg);
+
