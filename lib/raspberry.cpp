@@ -1,12 +1,116 @@
-#include "../include/tomato.hpp"
+#include "./raspberry.hpp"
+
 using namespace std;
+using namespace cv;
+
+myMutex cameramutex;
+
+void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height)
+{
+  const unsigned int sizeBuffer = width * height * 3; 
+  unsigned char *tempBuffer = new unsigned char[sizeBuffer];
+
+  for (int y = 0, destinationColumn = height - 1; y < height; ++y, --destinationColumn)
+    {
+	  int offset = y * width;
+
+	  for (int x = 0; x < width; x++)
+        {
+		  for (int i = 0; i < 3; i++) { // RGB
+			tempBuffer[(x * height + destinationColumn) * 3 + i] = buffer[(offset + x) * 3 + i];
+		  }
+        }
+    }
+
+  memcpy(buffer, tempBuffer, sizeBuffer);
+  delete[] tempBuffer;
+}
+
+
+void *myThread(void *arg)
+{
+  unsigned char *pImg0;
+  unsigned char *pImg1;
+  int i;
+
+  cv::Mat frame0;
+  cv::Mat frame1;
+  cv::Mat out0 = cv::Mat::zeros( W, H, CV_8UC3);
+  cv::Mat out1 = cv::Mat::zeros( W, H, CV_8UC3);
+  cv::VideoCapture cap0(0);
+  cv::VideoCapture cap1(1);
+
+  cap0.set(CV_CAP_PROP_FRAME_WIDTH, W);
+  cap0.set(CV_CAP_PROP_FRAME_HEIGHT,H);
+  cap1.set(CV_CAP_PROP_FRAME_WIDTH, W);
+  cap1.set(CV_CAP_PROP_FRAME_HEIGHT,H);
+
+  i=0;
+  while(1) {
+	string fileleft="./data/left0";
+	string fileright="./data/right0";
+	string png=".jpg";
+	  
+	cap0 >> frame0;
+	cap1 >> frame1;
+	pImg0 = frame0.data;
+	pImg1 = frame1.data;
+	rotateCW90(pImg0, W,H);
+	rotateCW90(pImg1, W,H);
+	out0.data = pImg0;
+	out1.data = pImg1;
+
+	
+	cv::imshow("Capture0", out0);
+	cv::imshow("Capture1", out1);
+	cvWaitKey(1);
+	
+
+
+	if( cameramutex.a == 1 ) break;
+	else if( cameramutex.a == 2 ) {
+	  cameramutex.lock();
+	  cameramutex.a = 0;
+	  
+	  std::ostringstream file;
+	  file << fileright << i << png;
+	  cv::imwrite(file.str(), out0 );
+	  
+	  std::ostringstream file1;
+	  file1 << fileleft << i++ << png;
+	  cv::imwrite(file1.str(), out1 );
+	  cameramutex.unlock();
+	}
+  }  
+  return NULL;
+}
+
+void *myKey(void *arg)
+{
+  startup();
+  char pwd[PATH_SIZE];
+  char input[500] = {"\0"};
+
+  getcwd(pwd,PATH_SIZE);
+  while(1){
+	cout << NAME_COLOR1 << "arc-->";
+	printf(" $ \x1b[0m");
+	fgets(input,sizeof(input),stdin) ;
+	if( input[0] == 'a' ){ cameramutex.a=1;break;}
+	else if( input[0] == 'b' ){ cameramutex.a=2;}
+	else if( input[0] == 'h' ){ help(); }
+	else if( input[0] == 'c' ) { system("clear"); }
+  }
+  end();
+  return NULL;  
+}
 
 void exclode_clr(cv::Mat &input, cv::Mat &output){
   int a,x,y;
   
-  for(y=0; y<HEIGHT;y++)
+  for(y=0; y<H;y++)
 	{
-	  for(x=0; x<WIDTH; x++)
+	  for(x=0; x<W; x++)
 		{
 		  a = input.step*y+(x*3);		  
 		  if(  (input.data[a] >=175 || input.data[a] <=5)  && input.data[a+1] >=50 && input.data[a+2] >= 50 )  output.at<unsigned char>(y,x) = 255;

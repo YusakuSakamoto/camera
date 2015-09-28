@@ -1,6 +1,4 @@
-//#define __NORMAL_CAMERA__
-//#define __KALMAN_TRACK_MODE__
-#include "../include/tomato.hpp"
+#include "../../../../lib/raspberry.hpp"
 
 #define MINIMUM_SQUARE 1600
 #define MINIMUM_TOMATO_RATIO 0.75
@@ -16,8 +14,8 @@ int main(int argc,char *argv[])
 	cv::VideoCapture cap;
 	if (!cap.open(idx)) return EXIT_FAILURE;
 	else{
-	  cap.set(CV_CAP_PROP_FRAME_WIDTH, WIDTH);
-	  cap.set(CV_CAP_PROP_FRAME_WIDTH, HEIGHT);
+	  cap.set(CV_CAP_PROP_FRAME_WIDTH, W);
+	  cap.set(CV_CAP_PROP_FRAME_HEIGHT, H);
 	}
 
 	//kalman filter setting
@@ -104,9 +102,9 @@ int main(int argc,char *argv[])
 	  cv::cvtColor(blur, frmHsv, CV_BGR2HSV);
 	  int a,x,y;
   
-	  for(y=0; y<HEIGHT;y++)
+	  for(y=0; y<H;y++)
 		{
-		  for(x=0; x<WIDTH; x++)
+		  for(x=0; x<W; x++)
 			{
 			  a = frmHsv.step*y+(x*3);		  
 			  if(  (frmHsv.data[a] >=170 || frmHsv.data[a] <=5)  && frmHsv.data[a+1] >=20 && frmHsv.data[a+2] >= 20 )  rangeRes.at<unsigned char>(y,x) = 255;

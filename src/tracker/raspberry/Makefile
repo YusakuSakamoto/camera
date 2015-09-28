@@ -6,19 +6,19 @@ OUT		= $(NAME)
 
 INCLUDE = -I/usr/local/include/libfreenect
 FREE_LIBS = -L/usr/local/lib -lfreenect
-CFLAGS 	= -fPIC -g -Wall `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0`
-LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0`
+CFLAGS 	= -fPIC -g -Wall `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
+LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
 
-all: $(OUT)
+all: main
 
-$(OUT):./bin/main.o ./bin/tomato.o
-	$(CXX) ./bin/main.o ./bin/tomato.o -o $@  $(LIBS) $(FREE_LIBS)
+main:./bin/main.o ./bin/raspberry.o
+	$(CXX) ./bin/main.o ./bin/raspberry.o -o $@  $(LIBS) $(FREE_LIBS)
 
 ./bin/main.o:./src/main.cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
-./bin/tomato.o:./src/tomato.cpp
+./bin/raspberry.o:../../../lib/raspberry.cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
 clean:
-	rm -rf ./bin/*.o $(OUT)
+	rm -rf ./bin/* ./main
