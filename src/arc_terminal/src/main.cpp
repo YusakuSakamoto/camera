@@ -15,9 +15,9 @@ int main(void)
   flag=0;
   while(flag==0){
 
-	cout << NAME_COLOR1 << NAME_STRING;
+	cout << NAME_COLOR1 << "arc--->>";
 
-	name_size = strlen(USER_NAME);
+	name_size = strlen( "arc--->>" );
 	pwd_size = strlen(pwd);
 
 	cout << NAME_COLOR2 << " ~";
