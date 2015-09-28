@@ -5,8 +5,11 @@ opencvライブラリを使用して、画像処理のプログラムを制作�
 ##現状
 ###arc_terminalについて
 arc用のターミナル表示を実現するために、cloneした後に次のコマンドを入力してください
-sudo make remove  
+make  
 sudo make install  
+
+削除するときは、次のコマンドを入力してください
+sudo make remove  
 
 これでarc用のターミナル表示ができるようになりました。  
 具体的な使用方法については、arc_sampleを参照してください。
