@@ -2,11 +2,23 @@
 このプログラムは、１２月に開催されるトマトロボット協議会のために作成中のプログラムです。
 opencvライブラリを使用して、画像処理のプログラムを制作中です。
 
+##必要な環境
+このプログラムは、raspberry piもしくは、ubuntuでの動作を前提としています。
+raspberry pi において、普通に環境を整えるだけではc++11がサポートされていませんので、バージョン4.9以上にするために、次のコマンドを入力してください。  
+
+`sudo apt-get install g++-4.9`
+`sudo apt-get install c++11`
+
+opencvの環境を必要としています。
+
 ##現状
 ###arc_terminalについて
 arc用のターミナル表示を実現するために、cloneした後に次のコマンドを入力してください
-sudo make remove  
-sudo make install  
+`make`  
+`sudo make install`  
+
+削除するときは、次のコマンドを入力してください
+`sudo make remove`  
 
 これでarc用のターミナル表示ができるようになりました。  
 具体的な使用方法については、arc_sampleを参照してください。
