@@ -1,5 +1,3 @@
-//#include "./normal.hpp"
-#include "./raspberry.hpp"
 #include <iostream>
 #include <stdio.h>
 #include <pthread.h>
@@ -8,7 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
-#include <Like_terminal.h>
+#include <arc.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -18,6 +16,13 @@
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/core/utility.hpp"
 
+#ifndef __CAMERA_H__
+#define __CAMERA_H__
+#define __RASPBERRY__
+//#define __NORMAL__
+#endif
+
+#ifdef __RASPBERRY__
 #define W 320
 #define H 240
 #define type CV_32F
@@ -30,6 +35,25 @@
 #define BOARD_H 7
 #define LEFT 1
 #define RIGHT 0
+#endif
+
+#ifdef __NORMAL__
+#define W 640
+#define H 480
+#define type CV_32F
+#define stateSize 6
+#define measSize 4
+#define MINIMUM_SQUARE 1600
+#define MINIMUM_TOMATO_RATIO 0.75
+#define NUMBOARD 20
+#define BOARD_W 10
+#define BOARD_H 7
+#define LEFT 1
+#define RIGHT 0
+#ebdif
+
+#endif
+
 
 using namespace std;
 using namespace cv;
