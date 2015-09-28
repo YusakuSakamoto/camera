@@ -101,16 +101,16 @@ private:
 };
 
 typedef struct {
-  Mat CM1 = Mat(3, 3, type);
-  Mat D1;
-  Mat CM2 = Mat(3, 3, type);
-  Mat D2;
-  Mat R, T, E, F;
-  Mat R1, R2, P1, P2, Q;
-  Mat map1x;
-  Mat map1y;
-  Mat map2x;
-  Mat map2y;
+  cv::Mat CM1 = cv::Mat(3, 3, type);
+  cv::Mat D1;
+  cv::Mat CM2 = cv::Mat(3, 3, type);
+  cv::Mat D2;
+  cv::Mat R, T, E, F;
+  cv::Mat R1, R2, P1, P2, Q;
+  cv::Mat map1x;
+  cv::Mat map1y;
+  cv::Mat map2x;
+  cv::Mat map2y;
 } MY_THREAD_ARG;
 #endif
 
