@@ -1,6 +1,5 @@
 NAME 	= main
-SUB		= normal
-#SUB		= raspberry
+SUB		= camera
 CXX 	= g++
 
 OUT		= $(NAME)

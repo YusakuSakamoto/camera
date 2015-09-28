@@ -1,4 +1,6 @@
-#include "./normal.hpp"
+#include "./camera.hpp"
+//#include "./normal.hpp"
+#include "./raspberry.hpp"
 
 using namespace std;
 using namespace cv;
