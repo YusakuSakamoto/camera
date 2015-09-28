@@ -1,24 +1,21 @@
 NAME	= main
 CXX 	= g++
 
-OUT		= $(NAME:%=%.out)
-BIN		= bin/$(NAME:%=%.o)
-SRC		= src/$(NAME:%=%.cpp)
-
 INCLUDE = -I/usr/local/include/libfreenect
 FREE_LIBS = -L/usr/local/lib -lfreenect
-CFLAGS 	= -fPIC -g -Wall `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0` `pkg-config sakamoto --cflags --libs` -lpthread
-LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-config sakamoto --cflags --libs` -lpthread
+CFLAGS 	= -fPIC -g -Wall `pkg-config --cflags opencv` `pkg-config --cflags libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
+LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-config arc --cflags --libs` -lpthread
 
-.PHONY:install
+all: main
 
-all: $(OUT)
+main:./bin/main.o ./bin/raspberry.o
+	$(CXX) ./bin/main.o ./bin/raspberry.o -o $@  $(LIBS) $(FREE_LIBS)
 
-$(OUT): $(BIN)
-	$(CXX) $< -o $@  $(LIBS) $(FREE_LIBS)
+./bin/main.o:./src/main.cpp
+	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
-$(BIN): $(SRC)
+./bin/raspberry.o:../../lib/raspberry.cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
 clean:
-	rm -rf $(BIN) ./*.out
+	rm -rf ./bin/* ./main
