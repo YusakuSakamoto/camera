@@ -19,8 +19,8 @@
 
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
-#define __RASPBERRY__
-//#define __NORMAL__
+//#define __RASPBERRY__
+#define __NORMAL__
 #endif
 
 using namespace std;
