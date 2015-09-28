@@ -9,10 +9,9 @@ int main(int argc, char *argv[])
   pthread_t thread_a;
   pthread_t thread_c;
   void *thread_return;
-  MY_THREAD_ARG thread_message;
   //calibrate();
 	
-  status = pthread_create(&thread_a, NULL, mycalibration, &thread_message);
+  status = pthread_create(&thread_a, NULL, mycalibration, NULL);
   if(status != 0 )exit(1);
   status=pthread_create(&thread_c, NULL, myKey,NULL);
   if(status != 0 )exit(1);

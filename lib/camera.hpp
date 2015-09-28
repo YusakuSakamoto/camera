@@ -14,19 +14,18 @@
 #include <string>
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/core/utility.hpp"
+//#include "opencv2/core/utility.hpp"
 
-/*
+
 #ifndef __CAMERA_H__
 #define __CAMERA_H__
-//#define __RASPBERRY__
-#define __NORMAL__
+#define __RASPBERRY__
+//#define __NORMAL__
 #endif
-*/
+
 using namespace std;
 using namespace cv;
 
-/*
 #if defined(__RASPBERRY__) && !defined(__RASPBERRY_2__)
 #define __RASPBERRY_2__
 #define W 320
@@ -57,11 +56,9 @@ private:
   pthread_mutex_t m_mutex;
 };
 #endif
-*/
 
-
-//#if defined(__NORMAL__) && !defined(__NORMAL_2__)
-//#define __NORMAL_2__
+#if defined(__NORMAL__) && !defined(__NORMAL_2__)
+#define __NORMAL_2__
 #define W 640
 #define H 480
 #define type CV_32F
@@ -90,7 +87,7 @@ public:
 private:
   pthread_mutex_t m_mutex;
 };
-//#endif
+#endif
 
 
 
@@ -98,12 +95,12 @@ private:
 void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height);
 void *myThread(void *arg);
 void *myKey(void *arg);
-//void exclode_clr(cv::Mat&, cv::Mat&);
-//void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
-//void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
-//int kalman_find(cv::Mat&,vector<cv::Rect>&,bool&,cv::KalmanFilter&,cv::Mat&);
-//int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vector<cv::Rect>&);
-//int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
-//void kalman_setting(cv::KalmanFilter& kf);
-//void calibrate();
-//void *mycalibration(void *arg);
+void exclode_clr(cv::Mat&, cv::Mat&);
+void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
+void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
+int kalman_find(cv::Mat&,vector<cv::Rect>&,bool&,cv::KalmanFilter&,cv::Mat&);
+int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vector<cv::Rect>&);
+int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
+void kalman_setting(cv::KalmanFilter& kf);
+void calibrate();
+void *mycalibration(void *arg);
