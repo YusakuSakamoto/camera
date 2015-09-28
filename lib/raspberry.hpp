@@ -19,7 +19,8 @@
 #define type CV_32F
 #define stateSize 6
 #define measSize 4
-
+#define MINIMUM_SQUARE 1600
+#define MINIMUM_TOMATO_RATIO 0.75
 
 class myMutex {
 public:

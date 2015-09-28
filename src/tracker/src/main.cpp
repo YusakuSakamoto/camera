@@ -1,7 +1,6 @@
-#include "../../../../lib/raspberry.hpp"
+//#include "../../../lib/raspberry.hpp"
+#include "../../../lib/normal.hpp"
 
-#define MINIMUM_SQUARE 1600
-#define MINIMUM_TOMATO_RATIO 0.75
 using namespace std;
 
 int main(int argc,char *argv[])

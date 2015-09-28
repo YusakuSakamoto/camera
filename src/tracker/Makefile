@@ -1,5 +1,6 @@
 NAME 	= main
-SUB		= tomato
+SUB		= normal
+#SUB		= raspberry
 CXX 	= g++
 
 OUT		= $(NAME)
@@ -11,13 +12,13 @@ LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0` `pkg-
 
 all: main
 
-main:./bin/main.o ./bin/raspberry.o
-	$(CXX) ./bin/main.o ./bin/raspberry.o -o $@  $(LIBS) $(FREE_LIBS)
+main:./bin/main.o ./bin/$(SUB).o
+	$(CXX) ./bin/main.o ./bin/$(SUB).o -o $@  $(LIBS) $(FREE_LIBS)
 
 ./bin/main.o:./src/main.cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
-./bin/raspberry.o:../../../lib/raspberry.cpp
+./bin/$(SUB).o:../../lib/$(SUB).cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
 clean:

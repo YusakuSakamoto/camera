@@ -1,4 +1,5 @@
-#include "../../../lib/raspberry.hpp"
+//#include "../../../lib/raspberry.hpp"
+#include "../../../lib/normal.hpp"
 
 using namespace std;
 using namespace cv;

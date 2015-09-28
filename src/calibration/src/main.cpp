@@ -1,4 +1,8 @@
-#include "../include/calib.hpp"
+//#include "../../../lib/raspberry.hpp"
+#include "../../../lib/normal.hpp"
+
+using namespace std;
+using namespace cv;
 
 int main(int argc, char *argv[])
 {
