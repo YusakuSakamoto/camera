@@ -1,7 +1,11 @@
 .PHONY:install
 .PHONY:remove
+all:
+	cd install && make
+
 install:
-	cd install && make && sh install.sh
+	cd install && sh install.sh 
 
 remove:
-	cd install && make clean && cd ../sample && make clean
+	cd install && make clean
+

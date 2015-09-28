@@ -72,6 +72,5 @@ int kalman_find(cv::Mat&,vector<cv::Rect>&,bool&,cv::KalmanFilter&,cv::Mat&);
 int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vector<cv::Rect>&);
 int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
 void kalman_setting(cv::KalmanFilter& kf);
-
 void calibrate();
 void *mycalibration(void *arg);

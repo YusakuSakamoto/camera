@@ -1,4 +1,4 @@
-#include "Like_terminal.h"
+#include "arc.h"
 
 int startup(void){
   ifstream ifs("/usr/local/bin/arc/startup.txt");
