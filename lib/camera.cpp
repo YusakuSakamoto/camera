@@ -108,7 +108,7 @@ void *myKey(void *arg)
   return NULL;  
 }
 
-/*
+
 void exclode_clr(cv::Mat &input, cv::Mat &output){
   int a,x,y;
   
@@ -153,7 +153,7 @@ void Filtering(vector<vector<cv::Point> > &contours,vector<vector<cv::Point> >& 
 		ratio = 1.0f / ratio;
 
 	  // Searching for a bBox almost square
-	  if (ratio > 0.75 && bBox.area() >= 400)
+	  if (ratio > KALMAN_MIN_RATIO && bBox.area() >= KALMAN_MIN_SQUARE)
 		{
 		  balls.push_back(contours[i]);
 		  ballsBox.push_back(bBox);
@@ -718,5 +718,3 @@ void *image_finder(void *arg){
   }
   return 0;
 }
-
-*/

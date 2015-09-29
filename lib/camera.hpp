@@ -40,6 +40,8 @@ using namespace cv;
 #define BOARD_H 7
 #define LEFT 1
 #define RIGHT 0
+#define KALMAN_MIN_SQUARE 400
+#define KALMAN_MIN_RATIO 0.75
 class myMutex {
 public:
   int a;
@@ -71,6 +73,8 @@ private:
 #define BOARD_H 7
 #define LEFT 0
 #define RIGHT 1
+#define KALMAN_MIN_SQUARE 200
+#define KALMAN_MIN_RATIO 0.75
 
 class myMutex {
 public:
@@ -93,7 +97,7 @@ private:
 void rotateCW90( cv::Mat& input, cv::Mat& output, const unsigned int width, const unsigned int height);
 void *myThread(void *arg);
 void *myKey(void *arg);
-/*
+
 void exclode_clr(cv::Mat&, cv::Mat&);
 void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
 void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
@@ -106,4 +110,4 @@ void *mycalibration(void *arg);
 void *video_finder(void *arg);
 void *tracker(void *arg);
 void *image_finder(void *arg);
-*/
+
