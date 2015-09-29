@@ -6,8 +6,9 @@ using namespace cv;
 myMutex cameramutex;
 string camera_param = "../../data/file.yml";
 
-void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned int height)
+void rotateCW90( cv::Mat& input, cv::Mat& output, const unsigned int width, const unsigned int height)
 {
+  unsigned char *pImg;
   int i;
   unsigned int y;
   unsigned int x;
@@ -16,23 +17,26 @@ void rotateCW90(unsigned char *buffer, const unsigned int width, const unsigned 
   const unsigned int sizeBuffer = width * height * 3; 
   unsigned char *tempBuffer = new unsigned char[sizeBuffer];
 
+  pImg = input.data;
+
   for (y = 0, destinationColumn = height - 1; y < height; ++y, --destinationColumn){
 	offset = y * width;
 	for (x = 0; x < width; x++){
 	  for (i = 0; i < 3; i++) { // RGB
-		tempBuffer[(x * height + destinationColumn) * 3 + i] = buffer[(offset + x) * 3 + i];
+		tempBuffer[(x * height + destinationColumn) * 3 + i] = pImg[(offset + x) * 3 + i];
 	  }
 	}
   }
-  memcpy(buffer, tempBuffer, sizeBuffer);
+  memcpy(pImg, tempBuffer, sizeBuffer);
   delete[] tempBuffer;
+
+  output.data = pImg;
+  
 }
 
 
 void *myThread(void *arg)
 {
-  unsigned char *pImg0;
-  unsigned char *pImg1;
   int i;
 
   cv::Mat frame0;
@@ -55,13 +59,9 @@ void *myThread(void *arg)
 	  
 	cap0 >> frame0;
 	cap1 >> frame1;
-	pImg0 = frame0.data;
-	pImg1 = frame1.data;
-	rotateCW90(pImg0, W,H);
-	rotateCW90(pImg1, W,H);
-	out0.data = pImg0;
-	out1.data = pImg1;
-
+	
+	rotateCW90(frame0, out0, W,H);
+	rotateCW90(frame1, out1, W,H);
 	
 	cv::imshow("Capture0", out0);
 	cv::imshow("Capture1", out1);
@@ -186,24 +186,23 @@ int kalman_find(cv::Mat& meas,vector<cv::Rect> &ballsBox,bool &found,cv::KalmanF
 	}
   else	kf.correct(meas); // Kalman Correction
   
-  cout << "Measure matrix:" << endl << meas << endl;
+  //cout << "Measure matrix:" << endl << meas << endl;
   return 0;
 }
 
 
-int kalman_process(cv::Mat& frame,cv::Mat& rangeRes,cv::Mat& res,vector< vector<cv::Point> >& balls, vector<cv::Rect> &ballsBox){
-  cv::Mat blur;
+int kalman_process(cv::Mat& frame, cv::Mat& rangeRes, cv::Mat& res, vector< vector<cv::Point> >& balls, vector<cv::Rect> &ballsBox){
+  cv::Mat blur = cv::Mat::zeros( W, H, CV_8UC3);
   cv::Mat frmHsv;
   vector<vector<cv::Point> > contours;
-
-  cv::GaussianBlur(frame, blur, cv::Size(5, 5), 3.0, 3.0);
+  
+  frame.copyTo(blur);
   cv::cvtColor(blur, frmHsv, CV_BGR2HSV);
   exclode_clr(frmHsv,rangeRes);
   cv::erode(rangeRes, rangeRes, cv::Mat(), cv::Point(-1, -1), 2);
   cv::dilate(rangeRes, rangeRes, cv::Mat(), cv::Point(-1, -1), 2);
   cv::findContours(rangeRes, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
   Filtering(contours,balls,ballsBox);
-  cout << "Balls found:" << ballsBox.size() << endl;
   Detection_result(res,ballsBox,balls);//show result
   
   return 0;  
@@ -211,7 +210,7 @@ int kalman_process(cv::Mat& frame,cv::Mat& rangeRes,cv::Mat& res,vector< vector<
 
 int kalman_if_found(cv::KalmanFilter& kf,cv::Mat& state,cv::Mat& res){
   state = kf.predict();
-  cout << "State post:" << endl << state << endl;
+  //  cout << "State post:" << endl << state << endl;
 
   cv::Rect predRect;
   predRect.width = state.at<float>(4);
@@ -279,8 +278,6 @@ void calibrate(){
   int board_w = BOARD_W;
   int board_h = BOARD_H;
   int board_n = board_w*board_h;
-  unsigned char *pImg1;
-  unsigned char *pImg2;
   Size board_sz1 = Size(board_w, board_h);
   Size board_sz2 = Size(board_w, board_h);
   vector<vector<Point3f> > object_points;
@@ -318,14 +315,8 @@ void calibrate(){
 	cap1 >> frame1;
 	cap2 >> frame2;
 	
-	pImg1 = frame1.data;
-	pImg2 = frame2.data;
-	
-	rotateCW90(pImg1, W,H);
-	rotateCW90(pImg2, W,H);
-	
-	out1.data = pImg1;
-	out2.data = pImg2;
+	rotateCW90(frame1, out1, W,H);
+	rotateCW90(frame2, out2, W,H);
 	
 	//cv::imshow("Capture1", out1);
 	//cv::imshow("Capture2", out2);
@@ -496,8 +487,6 @@ void *mycalibration(void *arg)
 
   
   int i=0;
-  unsigned char *pImg1;
-  unsigned char *pImg2;
   cv::Mat frame1;
   cv::Mat frame2;
   cv::Mat out1 = cv::Mat::zeros( W, H, CV_8UC3);
@@ -554,12 +543,8 @@ void *mycalibration(void *arg)
 	  //======================
 	  cap1 >> frame1;
 	  cap2 >> frame2;
-	  pImg1 = frame1.data;
-	  pImg2 = frame2.data;
-	  rotateCW90(pImg1, W,H);
-	  rotateCW90(pImg2, W,H);	
-	  out1.data = pImg1;
-	  out2.data = pImg2;
+	  rotateCW90(frame1, out1, W, H);
+	  rotateCW90(frame2, out2, W, H);	
 	  //==========================
 	  
 	  remap(out1, imgU1, map1x, map1y, INTER_LINEAR, BORDER_CONSTANT, Scalar());
@@ -608,4 +593,166 @@ void *mycalibration(void *arg)
   cap1.release();
   cap2.release();
   return NULL;
+}
+
+
+void *video_finder(void *arg){
+  //video setteing
+  int i;
+  int idx = 0;
+  cv::Mat frame;
+  cv::Mat res;
+  cv::VideoCapture cap;
+  cv::Mat out = cv::Mat::zeros( W, H, CV_8UC3);
+  if (!cap.open(idx)) return 0;
+  else{
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, W);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT, H);
+  }
+
+  i=0;
+  while ( 1 ){
+	string file_save_directory="./data/";
+	string png=".jpg";
+	cv::waitKey(1);
+	cap >> frame;
+	cv::Mat blur = cv::Mat::zeros( W, H, CV_8UC3);
+	cv::GaussianBlur(frame, blur, cv::Size(5, 5), 3.0, 3.0);
+	rotateCW90( blur, out, W, H);
+
+	  
+	vector<vector<cv::Point> > balls;
+	vector<cv::Rect> ballsBox;
+	cv::Mat rangeRes = cv::Mat::zeros(out.size(), CV_8UC1);
+	out.copyTo( res );
+	kalman_process(out,rangeRes,res,balls,ballsBox);
+		
+	cv::imshow("Tracking", res);
+
+	if( cameramutex.a == 1 ) break;
+	else if( cameramutex.a == 2 ) {
+	  cameramutex.lock();
+	  cameramutex.a = 0;
+	  
+	  std::ostringstream file;
+	  file << file_save_directory << i << png;
+	  cv::imwrite(file.str(), res );
+	  
+	  cameramutex.unlock();
+	}
+  }
+  return 0;
+}
+
+
+
+void *tracker(void *arg){
+  //video setteing
+  int i;
+  int idx = 0;
+  cv::Mat frame;
+  cv::Mat out = cv::Mat::zeros( W, H, CV_8UC3);
+  cv::VideoCapture cap;
+  string file_save_directory="./data/";
+  string png=".jpg";
+  if (!cap.open(idx)) return 0;
+  else{
+	cap.set(CV_CAP_PROP_FRAME_WIDTH, W);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT, H);
+  }
+
+  //kalman filter setting
+  double ticks = 0;
+  bool found = false;
+  int notFoundCount = 0;
+  int contrSize = 0;
+  cv::Mat res;
+  cv::KalmanFilter kf(stateSize, measSize, contrSize, type);
+  cv::Mat state(stateSize, 1, type);  // [x,y,v_x,v_y,w,h]
+  cv::Mat meas(measSize, 1, type);    // [z_x,z_y,z_w,z_h]
+  kalman_setting(kf);
+
+  i=0;
+  while (1){
+	//video capture
+	cv::waitKey(1);
+	cap >> frame;
+	cv::Mat blur = cv::Mat::zeros( W, H, CV_8UC3);
+	cv::GaussianBlur(frame, blur, cv::Size(5, 5), 3.0, 3.0);
+	rotateCW90( blur, out, W, H);
+
+	//loop time recorder
+	double precTick = ticks;
+	ticks = (double) cv::getTickCount();
+	double dT = (ticks - precTick) / cv::getTickFrequency();
+	kf.transitionMatrix.at<float>(2) = dT;
+	kf.transitionMatrix.at<float>(9) = dT;
+	//cout << "dT:" << endl << dT << endl;
+
+		
+	//kalman filtering
+	vector<vector<cv::Point> > balls;
+	vector<cv::Rect> ballsBox;
+	cv::Mat rangeRes = cv::Mat::zeros(out.size(), CV_8UC1);
+	out.copyTo( res );
+	if (found) kalman_if_found(kf,state,res);
+	kalman_process(out,rangeRes,res,balls,ballsBox);
+	if (balls.size() == 0)
+	  {
+		if( ++notFoundCount >= 100 ) found = false;
+	  }
+	else
+	  {
+		notFoundCount = 0;
+		kalman_find(meas,ballsBox,found,kf,state);
+	  }
+	cv::imshow("Tracking", res);
+
+
+
+	if( cameramutex.a == 1 ) break;
+	else if( cameramutex.a == 2 ) {
+	  cameramutex.lock();
+	  cameramutex.a = 0;
+	  
+	  std::ostringstream file;
+	  file << file_save_directory << i << png;
+	  cv::imwrite(file.str(), res );
+	  
+	  cameramutex.unlock();
+	}
+  }
+  return 0;
+}
+
+
+
+void *image_finder(void *arg){
+  string filename = "../../data/0.jpg";
+  
+  cv::Mat src_frame = cv::imread(filename, 1);
+  if(!src_frame.data) cout << "input file error" << endl;
+  cv::Mat frame;
+  cv::resize(src_frame,frame,cv::Size(640,480),0,0);
+  cv::namedWindow("image", CV_WINDOW_AUTOSIZE|CV_WINDOW_FREERATIO);
+
+  cv::Mat res;
+  cv::Mat state(stateSize, 1, type);  // [x,y,v_x,v_y,w,h]
+  cv::Mat meas(measSize, 1, type);    // [z_x,z_y,z_w,z_h]
+
+	
+  while( 1 ){
+	//show normal image
+	cv::imshow("image", frame);
+	cv::waitKey(1);
+
+	//kalman filtering
+	vector<vector<cv::Point> > balls;
+	vector<cv::Rect> ballsBox;
+	cv::Mat rangeRes = cv::Mat::zeros(frame.size(), CV_8UC1);
+	frame.copyTo( res );
+	kalman_process(frame, rangeRes, res, balls, ballsBox);
+	cv::imshow("Tracking", res);
+  }
+  return 0;
 }
