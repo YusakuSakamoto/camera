@@ -93,6 +93,7 @@ private:
 void rotateCW90( cv::Mat& input, cv::Mat& output, const unsigned int width, const unsigned int height);
 void *myThread(void *arg);
 void *myKey(void *arg);
+/*
 void exclode_clr(cv::Mat&, cv::Mat&);
 void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
 void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
@@ -105,3 +106,4 @@ void *mycalibration(void *arg);
 void *video_finder(void *arg);
 void *tracker(void *arg);
 void *image_finder(void *arg);
+*/

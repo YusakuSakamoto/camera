@@ -108,7 +108,7 @@ void *myKey(void *arg)
   return NULL;  
 }
 
-
+/*
 void exclode_clr(cv::Mat &input, cv::Mat &output){
   int a,x,y;
   
@@ -501,31 +501,6 @@ void *mycalibration(void *arg)
   string fileleft="../data/left0";
   string fileright="../data/right0";
   string png=".jpg";
-  
-  /*
-  int ndisparities = 16*5;   
-  int SADWindowSize = 11;//奇数でなければならない 
-  Ptr<StereoBM> bm = StereoBM::create(ndisparities,SADWindowSize);
-  cv::Mat vdisparity = Mat( 480, 640, CV_8UC1 );
-  bm->setROI1(roi1);
-  bm->setROI2(roi2);
-  bm->setPreFilterCap(31);
-  bm->setBlockSize(SADWindowSize > 0 ? SADWindowSize : 9);
-  bm->setMinDisparity(30);
-  bm->setTextureThreshold(1000);
-  // bm->setUniquenessRatio(10);
-  bm->setSpeckleWindowSize(150);
-  bm->setSpeckleRange(2);
-  //bm->setDisp12MaxDiff(-1);
-	
-  minDisparity – Minimum possible disparity value.
-    numDisparities – Maximum disparity minus minimum disparity. This parameter must be divisible by 16.
-    SADWindowSize – Matched block size. It must be an odd number >=1 .
-    disp12MaxDiff – Maximum allowed difference (in integer pixel units) in the left-right disparity check.
-    preFilterCap – Truncation value for the prefiltered image pixels.
-    uniquenessRatio – Margin in percentage by which the best (minimum) computed cost function value should “win” the second best value to consider the found match correct. Normally, a value within the 5-15 range is good enough.
-    speckleWindowSize – Maximum size of smooth disparity regions to consider their noise speckles and invalidate.
-    speckleRange – Maximum disparity variation within each connected component.*/
 
   CvStereoBMState *BMState = cvCreateStereoBMState();
   BMState->preFilterSize = 41;
@@ -556,20 +531,7 @@ void *mycalibration(void *arg)
 	  cvtColor(imgU1, grayU1,CV_RGB2GRAY);
 	  cvtColor(imgU2, grayU2,CV_RGB2GRAY);
 	  
-	  /*
-		bm->compute(grayU1, grayU2, disparity);
 
-		//-- Check its extreme values
-		double minVal; double maxVal;
-		minMaxLoc( disparity, &minVal, &maxVal );
-		printf("Min disp: %f Max value: %f \n", minVal, maxVal);
-
-		//-- 4. Display it as a CV_8UC1 image
-		disparity.convertTo( vdisparity, CV_8UC1, 255/(maxVal - maxVal));
-	  */
-
-	  //cvFindStereoCorrespondenceBM(&grayU1,&grayU2,&disparity,BMState);
-	  //cvNormalize(&disparity,&vdisparity,0,256,CV_MINMAX);
 	  imshow("undistort1", grayU1);
 	  imshow("undistort2", grayU2);
 	  //imshow("disp", disparity);
@@ -756,3 +718,5 @@ void *image_finder(void *arg){
   }
   return 0;
 }
+
+*/
