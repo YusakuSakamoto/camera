@@ -15,8 +15,8 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
   int flag = 1;
   int a;
   int loop = 0;
-  const double threshold = 0.01;
-  const int max_loop = 50;
+  const double threshold = 0.5;
+  const int max_loop = 5;
 
   for(j=0;j<num;j++){
 	
@@ -36,7 +36,7 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 		  if( /* (set[i].flag == 0) &&*/ (pow( pow(average_x-set[i].x,2) + pow(average_y-set[i].y,2 ),0.5) < h)  ){
 			moment_x += (set[i].x - average_x) * set[i].value;
 			moment_y += (set[i].y - average_y) * set[i].value;
-			moment_number++;
+			moment_number += set[i].value;
 		  }
 		}
 
@@ -44,10 +44,8 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 		  average_x += moment_x / moment_number;
 		  average_y += moment_y / moment_number;
 		}
-		// printf("%f,",average_x);
-		// printf("%f\n",average_y);
 		
-		if( (((average_x_pre-average_x) < threshold) && ((average_y_pre-average_y) < threshold )) ){
+		if( (((average_x_pre-average_x) < threshold) && ((average_y_pre-average_y) < threshold )) ){//収束条件
 		  a = output.step*(int)average_y + (int)average_x;
 		  for(i=0;i<num;i++){
 			if( set[i].flag == 0 ){
@@ -64,7 +62,8 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 		  flag++;
 		  break;
 		}else if( loop > max_loop ){
-		  
+		  loop=0;
+		  break;
 		}else{
 		  average_x_pre = average_x;
 		  average_y_pre = average_y;
@@ -72,7 +71,7 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 		}
 	  }
 	}
-	printf("%d\n",flag);
+	//printf("%d\n",flag);
   }
 }
 
@@ -125,8 +124,8 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 	}
 
 
-	// int i=0;
-	// dataset set[H*W]; 
+	int i=0;
+	dataset set[H*W]; 
   
 	//距離地図作成 loop2
 	for(y=H-1; y>=1;y--){
@@ -140,12 +139,12 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 		  if( work_img.data[a] > work_img.data[a+work_img.step] + 1  )
 			work_img.data[a] = work_img.data[a+work_img.step] + 1;
 
-		  // set[i].x = x;
-		  // set[i].y = y;
-		  // set[i].flag = 0;
-		  // set[i].value = work_img.data[a];
-		  // i++;
-		  // work.data[a]=255;
+		  set[i].x = x;
+		  set[i].y = y;
+		  set[i].flag = 0;
+		  set[i].value = work_img.data[a];
+		  i++;
+		  work.data[a]=255;
 		
 		}
 		else  work_img.data[a] = 0;
@@ -156,35 +155,35 @@ void mean_shift(dataset* set, cv::Mat& output, int num,double h){
 	//mean_shift(set,work,i,H,W,5.0);
 
   
-	int i=0;
-	dataset set[H*W];
-	//極限点探索 loop
-	for(y=1; y<=H-1;y++){
-	  for(x=1; x<=W-1; x++){
-		a = work_img.step*y+x;
-		if ( work_img.data[a] >= 2){
-		  if( (work_img.data[a] >= work_img.data[a+work_img.step+1]) &&
-			  (work_img.data[a] >= work_img.data[a+work_img.step+0]) &&
-			  (work_img.data[a] >= work_img.data[a+work_img.step-1]) &&
-			  (work_img.data[a] >= work_img.data[a+1]) &&
-			  (work_img.data[a] >= work_img.data[a-1]) &&
-			  (work_img.data[a] >= work_img.data[a-work_img.step+1]) &&
-			  (work_img.data[a] >= work_img.data[a-work_img.step+0]) &&
-			  (work_img.data[a] >= work_img.data[a-work_img.step-1]) )
-			{
+	// int i=0;
+	// dataset set[H*W];
+	// //極限点探索 loop
+	// for(y=1; y<=H-1;y++){
+	//   for(x=1; x<=W-1; x++){
+	// 	a = work_img.step*y+x;
+	// 	if ( work_img.data[a] >= 2){
+	// 	  if( (work_img.data[a] >= work_img.data[a+work_img.step+1]) &&
+	// 		  (work_img.data[a] >= work_img.data[a+work_img.step+0]) &&
+	// 		  (work_img.data[a] >= work_img.data[a+work_img.step-1]) &&
+	// 		  (work_img.data[a] >= work_img.data[a+1]) &&
+	// 		  (work_img.data[a] >= work_img.data[a-1]) &&
+	// 		  (work_img.data[a] >= work_img.data[a-work_img.step+1]) &&
+	// 		  (work_img.data[a] >= work_img.data[a-work_img.step+0]) &&
+	// 		  (work_img.data[a] >= work_img.data[a-work_img.step-1]) )
+	// 		{
 	  
-			  set[i].x = x;
-			  set[i].y = y;
-			  set[i].flag = 0;
-			  set[i].value = work_img.data[a];
-			  i++;
-			  work.data[a]=255;
-			}
-		}
-	  }
-	}
+	// 		  set[i].x = x;
+	// 		  set[i].y = y;
+	// 		  set[i].flag = 0;
+	// 		  set[i].value = work_img.data[a];
+	// 		  i++;
+	// 		  work.data[a]=255;
+	// 		}
+	// 	}
+	//   }
+	// }
   
-	mean_shift(set,mean,i,15.0);
+	mean_shift(set,mean,i,20.0);
 
   
 	//show image
