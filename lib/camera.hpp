@@ -30,12 +30,11 @@ using namespace cv;
 #define __RASPBERRY_2__
 #define W 320
 #define H 240
-#define type CV_32F
 #define stateSize 6
 #define measSize 4
 #define MINIMUM_SQUARE 1600
 #define MINIMUM_TOMATO_RATIO 0.75
-#define NUMBOARD 20
+#define NUMBOARD 40
 #define BOARD_W 10
 #define BOARD_H 7
 #define LEFT 1
@@ -63,16 +62,15 @@ private:
 #define __NORMAL_2__
 #define W 640
 #define H 480
-#define type CV_32F
 #define stateSize 6
 #define measSize 4
 #define MINIMUM_SQUARE 1600
 #define MINIMUM_TOMATO_RATIO 0.75
-#define NUMBOARD 20
+#define NUMBOARD 40
 #define BOARD_W 10
 #define BOARD_H 7
-#define LEFT 0
-#define RIGHT 1
+#define LEFT 0  //cappture 1
+#define RIGHT 1 //capture 2
 #define KALMAN_MIN_SQUARE 200
 #define KALMAN_MIN_RATIO 0.75
 
@@ -99,6 +97,7 @@ void *myThread(void *arg);
 void *myKey(void *arg);
 
 void exclode_clr(cv::Mat&, cv::Mat&);
+void exclode_clr_green(cv::Mat&, cv::Mat&);
 void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
 void Filtering(vector<vector<cv::Point> > &,vector<vector<cv::Point> >&,vector<cv::Rect>&);
 int kalman_find(cv::Mat&,vector<cv::Rect>&,bool&,cv::KalmanFilter&,cv::Mat&);
@@ -110,4 +109,4 @@ void *mycalibration(void *arg);
 void *video_finder(void *arg);
 void *tracker(void *arg);
 void *image_finder(void *arg);
-
+void stereoMatching(cv::Mat&,cv::Mat&,cv::Mat&);

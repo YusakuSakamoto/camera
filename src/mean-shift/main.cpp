@@ -6,18 +6,17 @@ int
 main (int argc, char **argv)
 {
   int level = 2;
-  IplImage *src_img = 0, *dst_img;
+  IplImage *src_img=cvCreateImage( cvSize(640,480), 8, 3 );
+  IplImage *dst_img;
+  IplImage *src;
   CvRect roi;
 
   // (1)画像の読み込み
   if (argc >= 2)
-    src_img = cvLoadImage (argv[1], CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
-  if (src_img == 0)
-    exit (-1);
-  if (src_img->nChannels != 3)
-    exit (-1);
-  if (src_img->depth != IPL_DEPTH_8U)
-    exit (-1);
+    src = cvLoadImage (argv[1], CV_LOAD_IMAGE_ANYDEPTH | CV_LOAD_IMAGE_ANYCOLOR);
+  else return 0;
+  
+  cvResize( src, src_img, CV_INTER_LINEAR );
 
   // (2)領域分割のためにROIをセットする
   printf("set roi");
