@@ -41,6 +41,14 @@ using namespace cv;
 #define RIGHT 0
 #define KALMAN_MIN_SQUARE 400
 #define KALMAN_MIN_RATIO 0.75
+
+typedef struct{
+  int x;
+  int y;
+  int value;
+  int flag;
+}dataset;
+
 class myMutex {
 public:
   int a;
@@ -73,6 +81,13 @@ private:
 #define RIGHT 1 //capture 2
 #define KALMAN_MIN_SQUARE 200
 #define KALMAN_MIN_RATIO 0.75
+
+typedef struct{
+  int x;
+  int y;
+  int value;
+  int flag;
+}dataset;
 
 class myMutex {
 public:
@@ -110,3 +125,6 @@ void *video_finder(void *arg);
 void *tracker(void *arg);
 void *image_finder(void *arg);
 void stereoMatching(cv::Mat&,cv::Mat&,cv::Mat&);
+void *Watershed(void *arg);
+void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop);
+int  make_EDM(const int height,const int width,cv::Mat& input,cv::Mat& output,dataset* set);

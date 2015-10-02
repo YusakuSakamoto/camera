@@ -98,8 +98,8 @@ void *myKey(void *arg)
 	cout << NAME_COLOR1 << "arc-->";
 	printf(" $ \x1b[0m");
 	fgets(input,sizeof(input),stdin) ;
-	if( input[0] == 'a' ){ cameramutex.a=1;break;}
-	else if( input[0] == 'b' ){ cameramutex.a=2;}
+	if( input[0] == 'q' ){ cameramutex.a=1;break;}
+	else if( input[0] == 's' ){ cameramutex.a=2;}
 	else if( input[0] == 'h' ){ help(); }
 	else if( input[0] == 'c' ) { system("clear"); }
 	else if( input[0] == ' '){ cameramutex.a=3;}
@@ -118,7 +118,7 @@ void exclode_clr(cv::Mat &input, cv::Mat &output){
 		{
 		  a = input.step*y+(x*3);
 		  
-		  if(  (input.data[a] >=175 || input.data[a] <= 15 ) )  output.at<unsigned char>(y,x) = 255;
+		  if(  (input.data[a] >=175 || input.data[a] <= 5 ) )  output.at<unsigned char>(y,x) = 255;
 		  else  output.at<unsigned char>(y,x) = 0;
 		}
 	}
@@ -747,4 +747,218 @@ void *image_finder(void *arg){
 	cv::imshow("corner", rangeRes);
   }
   return 0;
+}
+
+
+
+
+void *Watershed(void *arg){
+  string filedirec="./data/";
+  string png=".jpg";
+  
+  cv::Mat frame = cv::imread("../../data/0.jpg", 1);
+  cv::Mat src_img =cv::Mat::zeros(frame.size(),CV_8UC3);
+  cv::Mat work_img=cv::Mat::zeros(H/2,W/2,CV_8UC1);
+  cv::Mat mean=cv::Mat::zeros(H/2,W/2,CV_8UC1);
+  if(!frame.data) return 0;
+  cv::resize(frame,src_img,cv::Size(W/2,H/2),0,0);
+
+  
+  cv::Mat frmHsv;
+  cv::cvtColor(src_img, frmHsv, CV_BGR2HSV);
+  cv::Mat gray = cv::Mat::zeros(frmHsv.size(),CV_8UC1);
+
+  int a,x,y;
+  for(y=0; y<H/2;y++)
+  	{
+	  for(x=0; x<W/2; x++)
+		{
+		  a = frmHsv.step*y+(x*3);
+		  if(  (frmHsv.data[a] >=175 || frmHsv.data[a] <= 8 ) ) gray.at<unsigned char>(y,x) = 255;
+		  else  gray.at<unsigned char>(y,x) = 0;
+		}
+  	}
+
+  cv::erode(gray, gray, cv::Mat(), cv::Point(-1, -1), 2);
+  cv::erode(gray, gray, cv::Mat(), cv::Point(-1, -1), 2);
+  cv::erode(gray, gray, cv::Mat(), cv::Point(-1, -1), 2);
+
+  cv::dilate(gray, gray, cv::Mat(), cv::Point(-1, -1), 2);
+  cv::dilate(gray, gray, cv::Mat(), cv::Point(-1, -1), 2);
+  cv::dilate(gray, gray, cv::Mat(), cv::Point(-1, -1), 2);
+  
+  // cv::Mat frame = cv::imread("../../data/16.jpg", 0);
+  // cv::Mat src_img =cv::Mat::zeros(frame.size(),CV_8UC1);
+  // cv::Mat work_img=cv::Mat::zeros(H/2,W/2,CV_8UC1);
+  // cv::Mat mean=cv::Mat::zeros(H/2,W/2,CV_8UC1);
+  // cv::Mat gray = cv::Mat::zeros(H/2,W/2,CV_8UC1);
+  // if(!frame.data) return 0;
+  // cv::resize(frame,gray,cv::Size(W/2,H/2),0,0);
+
+  //mean shift
+  //=====================================
+  int i=0;
+  dataset set[H/2*W/2]; 
+  i = make_EDM(H/2,W/2,gray,work_img,set);
+  mean_shift(set,mean,i,30,0.01,3);
+  //=====================================
+  
+  i=0;
+  while(1){
+	//show image
+	//=======================================
+	cv::imshow("mean",mean);
+	cv::imshow("gray",gray);
+	cv::imshow("src",src_img);
+	//======================================
+	if( cameramutex.a == 1 ) break;
+	else if( cameramutex.a == 2 ) {
+	  cameramutex.lock();
+	  cameramutex.a = 0;
+	  
+	  std::ostringstream file;
+	  file << filedirec << i++ << png;
+	  cv::imwrite(file.str(), mean );
+	  
+	  std::ostringstream file1;
+	  file1 << filedirec << i++ << png;
+	  cv::imwrite(file1.str(), gray );
+
+	  std::ostringstream file2;
+	  file2 << filedirec << i++ << png;
+	  cv::imwrite(file2.str(), src_img );
+	  cameramutex.unlock();
+	}
+	cv::waitKey(0);
+  }
+  return 0;  
+}
+
+
+
+
+/*mean shift
+  HOW to use
+  arg 1 = Type dataset array
+  arg 2 = Mat output (gray scale) 
+  arg 3 = Mat output's array number
+  arg 4 = mean shift circle radius
+  arg 5 = epsilon
+  arg 6 = max loop number
+  ====================================================*/
+  void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop){
+  
+  //変数宣言
+  //===========================================
+  int a,i,j;
+  int flag = 1;
+  int loop = 0;
+  //===========================================
+
+  for(j=0;j<num;j++){
+	//mean shift による中心保存用変数と収束確認用変数の初期化
+	//==============================================
+	loop = 0;
+	float average_x = set[j].x;
+	float average_y = set[j].y;
+	float average_x_pre = set[j].x;
+	float average_y_pre = set[j].y;
+	//==============================================
+	
+	if( set[j].flag == 0 ){//まだ触れていない注目画素であれば
+	  while(1){//収束が確認できるまでの無限ループ
+		loop++;//loop counter
+
+		//for moment calc
+		//===============================================
+		int rec_n=0;
+		int rec[ (int)(pow(4*h,2)) ] = {0};
+		float moment_x = 0;
+		float moment_y = 0;
+		int moment_number = 0;
+		
+		for(i=0;i<num;i++){
+		  if( (pow( pow(average_x-set[i].x,2) + pow(average_y-set[i].y,2 ),0.5)) < h  ){
+			moment_x += (set[i].x - average_x) * set[i].value;
+			moment_y += (set[i].y - average_y) * set[i].value;
+			moment_number += set[i].value;
+			rec[rec_n++] = i;
+		  }
+		}
+		average_x += moment_x / moment_number;
+		average_y += moment_y / moment_number;
+		//==================================================
+
+		//繰り返し判定
+		//=====================================================
+		if( ((abs(average_x_pre-average_x) < threshold) && (abs(average_y_pre-average_y) < threshold )) ){//収束条件
+		  a = output.step*(int)average_y + (int)average_x;
+		  output.data[a] = 255;
+		  for(i=0;i<rec_n;i++){
+			if( set[ rec[i] ].flag == 0 ){
+			  set[ rec[i] ].flag = flag;
+			  set[j].flag = flag;
+			}else{
+			  set[j].flag = set[ rec[i] ].flag;
+			}
+		  }
+		  flag++;
+		  break;
+		}else if( loop > max_loop ){//収束しなければ
+		  break;
+		}else{//繰り返し計算の途中
+		  average_x_pre = average_x;
+		  average_y_pre = average_y;
+		  moment_number = 0;
+		}
+	  }
+	  //===========================================================
+	}
+	printf("%d\n",flag);
+  }
+}
+
+
+int  make_EDM(const int height,const int width,cv::Mat& input,cv::Mat& output,dataset* set){
+  int a,i,x,y;
+
+  //距離地図作成 loop1
+  for(y=1; y<=height-1;y++){
+	for(x=1; x<=width-1; x++){
+	  a = input.step*y+x;
+	  if( input.data[a]>150){
+		
+		output.data[a] = output.data[a-output.step-1] + 1;
+		if( output.data[a] > output.data[a-1] + 1  )
+		  output.data[a] = output.data[a-1] + 1;
+		if( output.data[a] > output.data[a-output.step] + 1  )
+		  output.data[a] = output.data[a-output.step] + 1;
+	  }
+	  else  output.data[a]=0;
+	}
+  }
+
+  i=0;
+  //距離地図作成 loop2
+  for(y=height-1; y>=1;y--){
+	for(x=width-1; x>=1; x--){
+	  a = output.step*y+x;
+	  if( input.data[a]>150){
+		if( output.data[a] > output.data[a+output.step+1] + 1 )
+		  output.data[a] = output.data[a+output.step+1] + 1;
+		if( output.data[a] > output.data[a+1] + 1  )
+		  output.data[a] = output.data[a+1] + 1;
+		if( output.data[a] > output.data[a+output.step] + 1  )
+		  output.data[a] = output.data[a+output.step] + 1;
+
+		set[i].x = x;
+		set[i].y = y;
+		set[i].flag = 0;
+		set[i].value = output.data[a];
+		i++;
+	  }
+	  else  output.data[a] = 0;
+	}
+  }
+  return i;
 }
