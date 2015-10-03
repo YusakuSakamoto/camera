@@ -762,6 +762,7 @@ void *Watershed(void *arg){
   cv::Mat mean=cv::Mat::zeros(H/2,W/2,CV_8UC1);
   if(!frame.data) return 0;
   cv::resize(frame,src_img,cv::Size(W/2,H/2),0,0);
+  //  cv::GaussianBlur(src_img, src_img, cv::Size(5, 5), 3.0, 3.0);
 
   
   cv::Mat frmHsv;
@@ -800,7 +801,7 @@ void *Watershed(void *arg){
   int i=0;
   dataset set[H/2*W/2]; 
   i = make_EDM(H/2,W/2,gray,work_img,set);
-  mean_shift(set,mean,i,30,0.01,3);
+  mean_shift(set,mean,i,20,0.01,30);
   //=====================================
   
   i=0;
@@ -846,7 +847,7 @@ void *Watershed(void *arg){
   arg 5 = epsilon
   arg 6 = max loop number
   ====================================================*/
-  void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop){
+void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop){
   
   //変数宣言
   //===========================================
@@ -872,7 +873,8 @@ void *Watershed(void *arg){
 		//for moment calc
 		//===============================================
 		int rec_n=0;
-		int rec[ (int)(pow(4*h,2)) ] = {0};
+		int rec[ (int)(pow(2*h,2)) ];
+		memset(rec,0,sizeof(rec));
 		float moment_x = 0;
 		float moment_y = 0;
 		int moment_number = 0;
@@ -907,14 +909,17 @@ void *Watershed(void *arg){
 		}else if( loop > max_loop ){//収束しなければ
 		  break;
 		}else{//繰り返し計算の途中
+		  // for(int k=0;k<rec_n;k++){
+		  // 	set[ rec[k] ].flag = flag;
+		  // }
 		  average_x_pre = average_x;
 		  average_y_pre = average_y;
 		  moment_number = 0;
 		}
 	  }
-	  //===========================================================
+	  //=====================================================
 	}
-	printf("%d\n",flag);
+	printf("(%d/%d)\n",j,num);
   }
 }
 
