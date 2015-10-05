@@ -17,7 +17,7 @@ main:./bin/main.o ./bin/$(SUB).o
 ./bin/main.o:./src/main.cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
-./bin/$(SUB).o:../../lib/$(SUB).cpp
+./bin/$(SUB).o:../../../lib/$(SUB).cpp
 	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
 clean:

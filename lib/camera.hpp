@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include <stack>
 #include <arc.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -64,7 +65,25 @@ public:
 private:
   pthread_mutex_t m_mutex;
 };
+
+class RAList {
+public:
+  int label;
+  RAList *next;
+  RAList( void );
+  ~RAList( void );
+  int Insert( RAList* );
+  
+private:
+  RAList *cur, *prev;
+  unsigned char exists;
+};
 #endif
+
+
+
+
+
 
 #if defined(__NORMAL__) && !defined(__NORMAL_2__)
 #define __NORMAL_2__
@@ -81,6 +100,12 @@ private:
 #define RIGHT 1 //capture 2
 #define KALMAN_MIN_SQUARE 200
 #define KALMAN_MIN_RATIO 0.75
+#define color_radius 6.5
+#define spatial_radius 10
+
+#define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
+#define START_TIMING(s) timeStart_##s = 0
+#define STOP_TIMING(s) timeDiff_##s = (double)(cvGetTickCount() - timeStart_##s); timeTally_##s += timeDiff_##s; countTally_##s++
 
 typedef struct{
   int x;
@@ -104,13 +129,23 @@ public:
 private:
   pthread_mutex_t m_mutex;
 };
+
+class RAList {
+public:
+  int label;
+  RAList *next;
+  RAList( void );
+  ~RAList( void );
+  int Insert( RAList* );
+  
+private:
+  RAList *cur, *prev;
+  unsigned char exists;
+};
 #endif
 
 
 void rotateCW90( cv::Mat& input, cv::Mat& output, const unsigned int width, const unsigned int height);
-void *myThread(void *arg);
-void *myKey(void *arg);
-
 void exclode_clr(cv::Mat&, cv::Mat&);
 void exclode_clr_green(cv::Mat&, cv::Mat&);
 void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
@@ -120,11 +155,29 @@ int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vecto
 int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
 void kalman_setting(cv::KalmanFilter& kf);
 void calibrate();
-void *mycalibration(void *arg);
-void *video_finder(void *arg);
-void *tracker(void *arg);
-void *image_finder(void *arg);
 void stereoMatching(cv::Mat&,cv::Mat&,cv::Mat&);
-void *Watershed(void *arg);
 void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop);
 int  make_EDM(const int height,const int width,cv::Mat& input,cv::Mat& output,dataset* set);
+int MeanShift(cv::Mat&,int**);
+void meanshift_step_ONE( cv::Mat& img, cv::Mat& result );
+
+
+inline float color_distance( const float* a, const float* b){
+  float l = a[0]-b[0];
+  float u = a[1]-b[1];
+  float v = a[2]-b[2];
+
+  return l*l+u*u+v*v;
+}
+
+
+inline float color_distance( cv::Mat& img, int x1,int y1,int x2,int y2){
+  int a1 = img.step*y1 + x1*3;
+  int a2 = img.step*y2 + x2*3;
+  
+  int r = img.data[a1+0]-img.data[a2+0];
+  int g = img.data[a1+1]-img.data[a2+1];
+  int b = img.data[a1+2]-img.data[a2+1];
+  
+  return r*r+g*g+b*b;
+}
