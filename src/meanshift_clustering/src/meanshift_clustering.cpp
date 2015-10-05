@@ -64,19 +64,19 @@ int MeanShift(cv::Mat& img,int **labels){
   int regionCount = 0;
   int *modePointCounts = new int[img.cols * img.rows];
   memset(modePointCounts,0,img.cols * img.rows*sizeof(int));
-  float *mode = new float [img.cols * img.rows];
+  float *mode = new float[img.cols * img.rows * 3];
   {
 	int label = -1;
 	for(int i=0; i<img.cols; i++)
 	  for(int j=0; j<img.rows; j++)
 		labels[i][j] = -1;
 	
-	for(int i=0;i<img.cols;i++)
-	  for(int j=0;j<img.rows;j++)
-		
+	for(int i=0; i<img.cols; i++)
+	  for(int j=0; j<img.rows; j++)
 		if( labels[i][j] < 0 ){
 		  labels[i][j] = ++label;
-		  int a = result.step*j + i*3;
+		  //cout << label << endl;
+		  int a = result.step*i + j*3;
 		  float L = (float)result.data[a+0];
 		  float A = (float)result.data[a+1];
 		  float B = (float)result.data[a+2];
@@ -90,19 +90,19 @@ int MeanShift(cv::Mat& img,int **labels){
 		  neighStack.push( cvPoint(i,j) );
 		  const int dxdy[][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
 
-		  
 		  while( !neighStack.empty() ){
 			CvPoint p = neighStack.top();
 			neighStack.pop();
 			
-			for(int k=0; k<8; k++){
+			for(int k=0; k<8; k++){ //8近傍探索
 			  int i2 = p.x + dxdy[k][0];
 			  int j2 = p.y + dxdy[k][1];
 			  if( i2>=0 && j2>=0 && i2<img.cols && j2<img.rows && labels[i2][j2] < 0 && color_distance(result,i,j,i2,j2) < color_radius2 ){
 				labels[i2][j2] = label;
 				neighStack.push(cvPoint(i2,j2));
 				modePointCounts[label]++;
-				a = result.step*j2 + i2*3;
+				
+				a = result.step*i2 + j2*3;
 				L = (float)result.data[a+0];
 				A = (float)result.data[a+1];
 				B = (float)result.data[a+2];
@@ -113,13 +113,12 @@ int MeanShift(cv::Mat& img,int **labels){
 			  }			  
 			}
 		  }
-	
 		  mode[label*3+0] /= modePointCounts[label];
 		  mode[label*3+1] /= modePointCounts[label];
 		  mode[label*3+2] /= modePointCounts[label];
 		}
 	// current Region count
-	regionCount = label+1;
+	regionCount = label + 1;
   }
   std::cout<< "Mean Shift(Connect):" << regionCount << std::endl;
   int oldRegionCount = regionCount;

@@ -172,12 +172,12 @@ inline float color_distance( const float* a, const float* b){
 
 
 inline float color_distance( cv::Mat& img, int x1,int y1,int x2,int y2){
-  int a1 = img.step*y1 + x1*3;
-  int a2 = img.step*y2 + x2*3;
+  int a1 = img.step*x1 + y1*3;
+  int a2 = img.step*x2 + y2*3;
   
-  int r = img.data[a1+0]-img.data[a2+0];
-  int g = img.data[a1+1]-img.data[a2+1];
-  int b = img.data[a1+2]-img.data[a2+1];
+  int r = img.data[a1+0] - img.data[a2+0];
+  int g = img.data[a1+1] - img.data[a2+1];
+  int b = img.data[a1+2] - img.data[a2+1];
   
   return r*r+g*g+b*b;
 }
