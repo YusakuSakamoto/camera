@@ -144,9 +144,6 @@ private:
 
 
 void rotateCW90( cv::Mat& input, cv::Mat& output, const unsigned int width, const unsigned int height);
-void *myThread(void *arg);
-void *myKey(void *arg);
-
 void exclode_clr(cv::Mat&, cv::Mat&);
 void exclode_clr_green(cv::Mat&, cv::Mat&);
 void Detection_result(cv::Mat&, vector<cv::Rect>&,	  vector<vector<cv::Point> >&);
@@ -156,12 +153,7 @@ int kalman_process(cv::Mat&,cv::Mat&,cv::Mat&,vector< vector<cv::Point> >&,vecto
 int kalman_if_found(cv::KalmanFilter&,cv::Mat&,cv::Mat&);
 void kalman_setting(cv::KalmanFilter& kf);
 void calibrate();
-void *mycalibration(void *arg);
-void *video_finder(void *arg);
-void *tracker(void *arg);
-void *image_finder(void *arg);
 void stereoMatching(cv::Mat&,cv::Mat&,cv::Mat&);
-void *Watershed(void *arg);
 void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop);
 int  make_EDM(const int height,const int width,cv::Mat& input,cv::Mat& output,dataset* set);
 int MeanShift(cv::Mat&,int**);
