@@ -64,7 +64,25 @@ public:
 private:
   pthread_mutex_t m_mutex;
 };
+
+class RAList {
+public:
+  int label;
+  RAList *next;
+  RAList( void );
+  ~RAList( void );
+  int Insert( RAList* );
+  
+private:
+  RAList *cur, *prev;
+  unsigned char exists;
+};
 #endif
+
+
+
+
+
 
 #if defined(__NORMAL__) && !defined(__NORMAL_2__)
 #define __NORMAL_2__
@@ -81,6 +99,11 @@ private:
 #define RIGHT 1 //capture 2
 #define KALMAN_MIN_SQUARE 200
 #define KALMAN_MIN_RATIO 0.75
+#define color_radius 6.5
+
+#define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
+#define START_TIMING(s) timeStart_##s = 0
+#define STOP_TIMING(s) timeDiff_##s = (double)(cvGetTickCount() - timeStart_##s); timeTally_##s += timeDiff_##s; countTally_##s++
 
 typedef struct{
   int x;
@@ -103,6 +126,19 @@ public:
   }
 private:
   pthread_mutex_t m_mutex;
+};
+
+class RAList {
+public:
+  int label;
+  RAList *next;
+  RAList( void );
+  ~RAList( void );
+  int Insert( RAList* );
+  
+private:
+  RAList *cur, *prev;
+  unsigned char exists;
 };
 #endif
 
@@ -128,3 +164,4 @@ void stereoMatching(cv::Mat&,cv::Mat&,cv::Mat&);
 void *Watershed(void *arg);
 void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop);
 int  make_EDM(const int height,const int width,cv::Mat& input,cv::Mat& output,dataset* set);
+int MeanShift(cv::Mat&,int**);
