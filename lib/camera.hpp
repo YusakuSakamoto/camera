@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include <stack>
 #include <arc.h>
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -100,6 +101,7 @@ private:
 #define KALMAN_MIN_SQUARE 200
 #define KALMAN_MIN_RATIO 0.75
 #define color_radius 6.5
+#define spatial_radius 10
 
 #define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
 #define START_TIMING(s) timeStart_##s = 0
@@ -157,3 +159,25 @@ void stereoMatching(cv::Mat&,cv::Mat&,cv::Mat&);
 void mean_shift(dataset* set, cv::Mat& output, const int num,const int h  ,const double threshold, const int max_loop);
 int  make_EDM(const int height,const int width,cv::Mat& input,cv::Mat& output,dataset* set);
 int MeanShift(cv::Mat&,int**);
+void meanshift_step_ONE( cv::Mat& img, cv::Mat& result );
+
+
+inline float color_distance( const float* a, const float* b){
+  float l = a[0]-b[0];
+  float u = a[1]-b[1];
+  float v = a[2]-b[2];
+
+  return l*l+u*u+v*v;
+}
+
+
+inline float color_distance( cv::Mat& img, int x1,int y1,int x2,int y2){
+  int a1 = img.step*y1 + x1*3;
+  int a2 = img.step*y2 + x2*3;
+  
+  int r = img.data[a1+0]-img.data[a2+0];
+  int g = img.data[a1+1]-img.data[a2+1];
+  int b = img.data[a1+2]-img.data[a2+1];
+  
+  return r*r+g*g+b*b;
+}
