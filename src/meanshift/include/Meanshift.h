@@ -88,12 +88,13 @@ class Meanshift{
  public:
   Meanshift();
   ~Meanshift();
-  IplImage* img;
   int meanshift(cv::Mat& input, int **ilabels);
 
  private:
+  IplImage* img;
   void meanshift_step_one(IplImage*,IplImage*);
   int meanshift_step_two(IplImage*,IplImage*,int**,int*,float*);
+  void meanshift_step_three(IplImage*,IplImage*,int&,int&,int**,float*,int*);
   const int spatial_radius = 10;
   const double color_radius = 6.5;
   const double color_radius2 = color_radius*color_radius;
