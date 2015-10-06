@@ -86,7 +86,7 @@ inline int getLabel2( std::vector<int>& unionfind, int l )
 
 const int spatial_radius = 10;
 const double color_radius = 6.5;
-int MeanShift(const IplImage* img, int **labels);
+
 
 // RAList from EDISON
 
@@ -104,4 +104,14 @@ private:
 	RAList	*cur, *prev;
 	unsigned char exists;
 
+};
+
+
+class Meanshift{
+ public:
+  Meanshift();
+  ~Meanshift();
+  IplImage* img;
+  int MeanShift(const IplImage* img, int **labels);
+  int meanshift(cv::Mat& input, int **ilabels);
 };

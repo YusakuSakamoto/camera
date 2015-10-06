@@ -3,24 +3,20 @@
 using namespace cv;
 using namespace std;
 
-int meanshift(IplImage* img, int **ilabels){
-  return MeanShift(img, ilabels);
-}
-
 int main(int argc, char* argv[])
 {
-  //IplImage *img = cvLoadImage("./data/input.png");
   cv::Mat input = cv::imread("./data/input.png",1);
   cv::Mat output = cv::Mat::zeros(input.rows,input.cols,CV_8UC3);
   
-  // Mean shift
-  IplImage imgbody = input;
-  IplImage *img = &imgbody;
+  // label contenor
   int **ilabels = new int *[input.rows];
   for(int i=0;i<input.rows;i++){
 	ilabels[i] = new int [input.cols];
   }
-  int regionCount = meanshift(img, ilabels);
+  
+  // Mean shift
+  Meanshift shift;
+  int regionCount = shift.meanshift(input, ilabels);
 
   
   //乱数生成
@@ -40,9 +36,14 @@ int main(int argc, char* argv[])
 	  }
   }
 
+  // 結果表示
+  cv::imshow("input",input);
   cv::imshow("output",output);
   cvWaitKey();
-  cvReleaseImage(&img);
+
+  // メモリ解放
+  input.release();
+  output.release();
 
   return 0;
 }

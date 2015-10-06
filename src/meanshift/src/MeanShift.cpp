@@ -43,7 +43,22 @@ int RAList::Insert(RAList *entry)
   return (int)(exists);
 }
 
-int MeanShift(const IplImage* img, int **labels)
+Meanshift::Meanshift(){
+}
+
+Meanshift::~Meanshift(){
+  cvReleaseImage( &img );
+}
+
+int Meanshift::meanshift(cv::Mat& input, int **ilabels){
+  IplImage imgbody = input;
+  img = &imgbody;
+  int regionCount = MeanShift(img, ilabels);
+  return regionCount;
+}
+
+
+int Meanshift::MeanShift(const IplImage* img, int **labels)
 {
   DECLARE_TIMING(timer);
   START_TIMING(timer);
