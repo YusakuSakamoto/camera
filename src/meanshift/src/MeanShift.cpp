@@ -159,7 +159,6 @@ int MeanShift(const IplImage* img, int **labels)
 		if(labels[i][j]<0)
 		  {
 			labels[i][j] = ++label;
-			std::cout << label << std::endl;
 			float L = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 0],
 			  U = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1],
 			  V = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2];
