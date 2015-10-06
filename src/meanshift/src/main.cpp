@@ -5,36 +5,45 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-  IplImage *img = cvLoadImage("./data/input.png");
-
+  cv::Mat input = cv::imread("./data/input.png",1);
+  cv::Mat output = cv::Mat::zeros(input.rows,input.cols,CV_8UC3);
+  
+  // create label container
+  int **ilabels = new int *[input.rows];
+  for(int i=0;i<input.rows;i++){
+	ilabels[i] = new int [input.cols];
+  }
+  
   // Mean shift
-  int **ilabels = new int *[img->height];
-  for(int i=0;i<img->height;i++){
-	ilabels[i] = new int [img->width];
-  }
-  int regionCount = MeanShift(img, ilabels);
+  Meanshift shift(input);
+  int regionCount = shift.meanshift(input, ilabels);
+
+  
+  //乱数生成
   vector<int> color(regionCount);
-  CvRNG rng= cvRNG(cvGetTickCount());
-  for(int i=0;i<regionCount;i++){
-	color[i] = cvRandInt(&rng);
-  }
-  /*
-  // Draw random color
-  for(int i=0;i<img->height;i++){
-	for(int j=0;j<img->width;j++)
+  cv::RNG gen(cv::getTickCount());
+  gen.fill(color, cv::RNG::UNIFORM, cv::Scalar(0), cv::Scalar(pow(256,3)));
+  
+  //ランダム色を代入
+  for(int i=0;i<output.rows;i++){
+	for(int j=0;j<output.cols;j++)
 	  { 
 		int cl = ilabels[i][j];
-		((uchar *)(img->imageData + i*img->widthStep))[j*img->nChannels + 0] = (color[cl])&255;
-		((uchar *)(img->imageData + i*img->widthStep))[j*img->nChannels + 1] = (color[cl]>>8)&255;
-		((uchar *)(img->imageData + i*img->widthStep))[j*img->nChannels + 2] = (color[cl]>>16)&255;
+		int a = output.step*i + j*3;
+		output.data[a+0] = (color[cl])&255;
+		output.data[a+2] = (color[cl] >> 8)&255;
+		output.data[a+2] = (color[cl] >> 16)&255;
 	  }
   }
-*/
-  cvNamedWindow("MeanShift",CV_WINDOW_AUTOSIZE);
-  cvShowImage("MeanShift",img);
+
+  // 結果表示
+  cv::imshow("input",input);
+  cv::imshow("output",output);
   cvWaitKey();
-  cvDestroyWindow("MeanShift");
-  cvReleaseImage(&img);
+
+  // メモリ解放
+  input.release();
+  output.release();
 
   return 0;
 }

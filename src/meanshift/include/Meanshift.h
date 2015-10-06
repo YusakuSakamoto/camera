@@ -1,11 +1,23 @@
-#include "opencv2/core/core.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/imgproc/imgproc_c.h"
-#include <vector>
-#include <stack>
 #include <iostream>
+#include <stdio.h>
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <vector>
 #include <cmath>
+#include <sstream>
+#include <string.h>
+#include <stack>
+#include <arc.h>
+#include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/video/video.hpp>
+#include <string>
+#include "opencv2/features2d/features2d.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
+//#include "opencv2/core/utility.hpp"
+
 
 //##は文字列を連結するときusing namespace cv;
 
@@ -73,24 +85,28 @@ inline int getLabel2( std::vector<int>& unionfind, int l )
 	}
 }
 
-const int spatial_radius = 10;
-const double color_radius = 6.5;
-int MeanShift(const IplImage* img, int **labels);
+class Meanshift{
+  // function
+ public:
+  Meanshift(cv::Mat&);
+  ~Meanshift();
+  int meanshift(cv::Mat&, int**);// terminal
 
-// RAList from EDISON
+ private:
+  void meanshift_step_one();
+  int meanshift_step_two(int**,int*,float*);
+  void meanshift_step_three(int**,float*,int*);
+  void meanshift_step_four(int**,float*,int*);
 
-class RAList {
-	// This is cut from Mean Shift Analysis Library, Implemented by Chris M. Christoudias, Bogdan Georgescu
-public:
-	int		label;
-	RAList	*next;
-	RAList( void );
-	~RAList( void );
-	int Insert(RAList*);
-
-private:
-	///////current and previous pointer/////
-	RAList	*cur, *prev;
-	unsigned char exists;
-
+  // variable
+ private:
+  int regionCount;
+  int oldRegionCount;
+  IplImage imgbody;
+  IplImage* result;
+  IplImage* img;
+  const int minRegion = 50;
+  const int spatial_radius = 10;
+  const double color_radius = 6.5;
+  const double color_radius2 = color_radius*color_radius;
 };
