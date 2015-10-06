@@ -9,15 +9,21 @@ Meanshift::Meanshift(cv::Mat& input):
   // since Luv may produce noise points
   //======================================================
   imgbody = input;
+  height = input.rows;
+  width = input.cols;
+  
   img = &imgbody;
   result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
   cvCvtColor(img, result, CV_RGB2Lab);
-  mode = new float[img->height*img->width*3];
-  modePointCounts = new int[img->height*img->width];
+  mode = new float[height*width*3];
+  modePointCounts = new int[height*width];
+  memset(modePointCounts, 0, width * height * sizeof(int));
   //======================================================
 }
 
 Meanshift::~Meanshift(){
+  delete []mode;
+  delete []modePointCounts;
   cvReleaseImage( &img );
 }
 
@@ -30,7 +36,7 @@ int Meanshift::meanshift(int **labels)
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   //==========================================================
   meanshift_step_one();
-
+  
   IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
   cvCvtColor(result, tobeshow, CV_Lab2RGB);
   cvSaveImage("./data/filtered.png", tobeshow);
@@ -41,8 +47,7 @@ int Meanshift::meanshift(int **labels)
   // Step Two. Cluster
   // Connect(接合)
   //=============================================================
-  memset(modePointCounts, 0, img->width*img->height*sizeof(int));  
-  int regionCount = meanshift_step_two(labels);
+  meanshift_step_two(labels);
   std::cout<<"Mean Shift(Connect):" << regionCount << std::endl;
   oldRegionCount = regionCount;
   //============================================================
@@ -71,8 +76,6 @@ int Meanshift::meanshift(int **labels)
   STOP_TIMING(timer);
   std::cout<<"Mean Shift(ms):"<<GET_TIMING(timer)<<std::endl;
   cvReleaseImage(&result);
-  delete []mode;
-  delete []modePointCounts;
   //======================================================
   
   return regionCount;
@@ -164,7 +167,11 @@ void Meanshift::meanshift_step_one(){
 }
 
 
-int Meanshift::meanshift_step_two( int **labels){
+
+
+
+
+void Meanshift::meanshift_step_two( int **labels){
   // Step Two. Cluster
   // Connect
   {
@@ -215,7 +222,6 @@ int Meanshift::meanshift_step_two( int **labels){
 	//current Region count
 	regionCount = label+1;
   }
-  return regionCount;
 }
 
 
