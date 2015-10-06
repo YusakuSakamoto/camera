@@ -87,26 +87,6 @@ inline int getLabel2( std::vector<int>& unionfind, int l )
 const int spatial_radius = 10;
 const double color_radius = 6.5;
 
-
-// RAList from EDISON
-
-class RAList {
-	// This is cut from Mean Shift Analysis Library, Implemented by Chris M. Christoudias, Bogdan Georgescu
-public:
-	int		label;
-	RAList	*next;
-	RAList( void );
-	~RAList( void );
-	int Insert(RAList*);
-
-private:
-	///////current and previous pointer/////
-	RAList	*cur, *prev;
-	unsigned char exists;
-
-};
-
-
 class Meanshift{
  public:
   Meanshift();
