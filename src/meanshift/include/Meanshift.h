@@ -84,14 +84,17 @@ inline int getLabel2( std::vector<int>& unionfind, int l )
 	}
 }
 
-const int spatial_radius = 10;
-const double color_radius = 6.5;
-
 class Meanshift{
  public:
   Meanshift();
   ~Meanshift();
   IplImage* img;
-  int MeanShift(const IplImage* img, int **labels);
   int meanshift(cv::Mat& input, int **ilabels);
+
+ private:
+  void meanshift_step_one(IplImage*,IplImage*);
+  int meanshift_step_two(IplImage*,IplImage*,int**,int*,float*);
+  const int spatial_radius = 10;
+  const double color_radius = 6.5;
+  const double color_radius2 = color_radius*color_radius;
 };

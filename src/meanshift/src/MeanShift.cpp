@@ -8,28 +8,7 @@ Meanshift::~Meanshift(){
   cvReleaseImage( &img );
 }
 
-int Meanshift::meanshift(cv::Mat& input, int **ilabels){
-  IplImage imgbody = input;
-  img = &imgbody;
-  int regionCount = MeanShift(img, ilabels);
-  return regionCount;
-}
-
-
-int Meanshift::MeanShift(const IplImage* img, int **labels)
-{
-  DECLARE_TIMING(timer);
-  START_TIMING(timer);
-
-  int level = 1;
-  double color_radius2=color_radius*color_radius;
-  int minRegion = 50;
-
-  // use Lab rather than L*u*v!
-  // since Luv may produce noise points
-  IplImage *result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
-  cvCvtColor(img, result, CV_RGB2Lab);
-
+void Meanshift::meanshift_step_one(IplImage* img,IplImage* result){
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   for(int i=0;i<img->height;i++) 
@@ -109,19 +88,14 @@ int Meanshift::MeanShift(const IplImage* img, int **labels)
 		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1] = (uchar)U;
 		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2] = (uchar)V;
 	  }
+}
 
-  IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
-  cvCvtColor(result, tobeshow, CV_Lab2RGB);
-  cvSaveImage("./data/filtered.png", tobeshow);
-  cvReleaseImage(&tobeshow);
 
-  
+int Meanshift::meanshift_step_two(IplImage* img,IplImage* result, int **labels,int* modePointCounts,float* mode){
   // Step Two. Cluster
   // Connect
   int regionCount = 0;
-  int *modePointCounts = new int[img->height*img->width];
-  memset(modePointCounts, 0, img->width*img->height*sizeof(int));
-  float *mode = new float[img->height*img->width*3];
+
   {
 	int label = -1;
 	for(int i=0;i<img->height;i++) 
@@ -170,6 +144,46 @@ int Meanshift::MeanShift(const IplImage* img, int **labels)
 	//current Region count
 	regionCount = label+1;
   }
+  return regionCount;
+}
+
+
+
+
+
+int Meanshift::meanshift(cv::Mat& input, int **labels)
+{
+  IplImage imgbody = input;
+  img = &imgbody;
+  
+  DECLARE_TIMING(timer);
+  START_TIMING(timer);
+
+  int level = 1;
+  int minRegion = 50;
+
+  // use Lab rather than L*u*v!
+  // since Luv may produce noise points
+  IplImage *result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
+  cvCvtColor(img, result, CV_RGB2Lab);
+
+  // Step One. Filtering stage of meanshift segmentation
+  // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
+  meanshift_step_one(img,result);
+
+  IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
+  cvCvtColor(result, tobeshow, CV_Lab2RGB);
+  cvSaveImage("./data/filtered.png", tobeshow);
+  cvReleaseImage(&tobeshow);
+
+  
+  // Step Two. Cluster
+  // Connect
+  int *modePointCounts = new int[img->height*img->width];
+  memset(modePointCounts, 0, img->width*img->height*sizeof(int));
+  float *mode = new float[img->height*img->width*3];
+  
+  int regionCount = meanshift_step_two(img,result,labels,modePointCounts,mode);
   std::cout<<"Mean Shift(Connect):"<<regionCount<<std::endl;
   int oldRegionCount = regionCount;
 
