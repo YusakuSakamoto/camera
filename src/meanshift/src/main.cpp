@@ -14,13 +14,14 @@ int main(int argc, char* argv[])
 	ilabels[i] = new int [img->width];
   }
   int regionCount = MeanShift(img, ilabels);
-  vector<int> color(regionCount);
-  CvRNG rng= cvRNG(cvGetTickCount());
-  for(int i=0;i<regionCount;i++){
-	color[i] = cvRandInt(&rng);
-  }
+
   
-  // Draw random color
+  //乱数生成
+  vector<int> color(regionCount);
+  cv::RNG gen(cv::getTickCount());
+  gen.fill(color, cv::RNG::UNIFORM, cv::Scalar(0), cv::Scalar(pow(256,3)));
+  
+  //ランダム色を代入
   for(int i=0;i<img->height;i++){
 	for(int j=0;j<img->width;j++)
 	  { 
