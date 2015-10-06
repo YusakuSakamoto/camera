@@ -12,6 +12,8 @@ Meanshift::Meanshift(cv::Mat& input):
   img = &imgbody;
   result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
   cvCvtColor(img, result, CV_RGB2Lab);
+  mode = new float[img->height*img->width*3];
+  modePointCounts = new int[img->height*img->width];
   //======================================================
 }
 
@@ -19,7 +21,7 @@ Meanshift::~Meanshift(){
   cvReleaseImage( &img );
 }
 
-int Meanshift::meanshift(cv::Mat& input, int **labels)
+int Meanshift::meanshift(int **labels)
 {
   DECLARE_TIMING(timer);
   START_TIMING(timer);
@@ -39,11 +41,8 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
   // Step Two. Cluster
   // Connect(接合)
   //=============================================================
-  int *modePointCounts = new int[img->height*img->width];
-  memset(modePointCounts, 0, img->width*img->height*sizeof(int));
-  float *mode = new float[img->height*img->width*3];
-  
-  int regionCount = meanshift_step_two(labels,modePointCounts,mode);
+  memset(modePointCounts, 0, img->width*img->height*sizeof(int));  
+  int regionCount = meanshift_step_two(labels);
   std::cout<<"Mean Shift(Connect):" << regionCount << std::endl;
   oldRegionCount = regionCount;
   //============================================================
@@ -53,7 +52,7 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
   // Step Three.
   // TransitiveClosure(推移閉包)
   //==========================================================
-  meanshift_step_three(labels,mode,modePointCounts);
+  meanshift_step_three(labels);
   //==========================================================
   
 
@@ -61,7 +60,7 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
   // Step Four.
   // Prune(除去(最適化))
   //===========================================================
-  meanshift_step_four(labels,mode,modePointCounts);
+  meanshift_step_four(labels);
   //==========================================================
 
 
@@ -165,7 +164,7 @@ void Meanshift::meanshift_step_one(){
 }
 
 
-int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode){
+int Meanshift::meanshift_step_two( int **labels){
   // Step Two. Cluster
   // Connect
   {
@@ -224,7 +223,7 @@ int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode
 
 
 
-void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCounts){
+void Meanshift::meanshift_step_three(int** labels){
   // Step three.
   // TransitiveClosure(推移閉包)
   for(int counter = 0, deltaRegionCount = 1; counter<5 && deltaRegionCount>0; counter++)
@@ -359,7 +358,7 @@ void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCoun
 	}
 }
 
-void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCounts){
+void Meanshift::meanshift_step_four(int** labels){
   int *modePointCounts_buffer = new int[regionCount];
   float *mode_buffer = new float[regionCount*3];
   int	*label_buffer = new int [regionCount];
