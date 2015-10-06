@@ -170,14 +170,27 @@ inline float color_distance( const float* a, const float* b){
   return l*l+u*u+v*v;
 }
 
-
-inline float color_distance( cv::Mat& img, int x1,int y1,int x2,int y2){
+/*
+inline int color_distance( cv::Mat& img, int x1,int y1,int x2,int y2){
   int a1 = img.step*x1 + y1*3;
   int a2 = img.step*x2 + y2*3;
   
   int r = img.data[a1+0] - img.data[a2+0];
   int g = img.data[a1+1] - img.data[a2+1];
-  int b = img.data[a1+2] - img.data[a2+1];
+  int b = img.data[a1+2] - img.data[a2+2];
   
+  return r*r+g*g+b*b;
+}
+*/
+
+// Distance used in Mean Shift
+inline int color_distance( const IplImage* img, int x1, int y1, int x2, int y2 ) 
+{
+  int r = ((uchar *)(img->imageData + x1*img->widthStep))[y1*img->nChannels + 0]
+	- ((uchar *)(img->imageData + x2*img->widthStep))[y2*img->nChannels + 0];
+  int g = ((uchar *)(img->imageData + x1*img->widthStep))[y1*img->nChannels + 1]
+	- ((uchar *)(img->imageData + x2*img->widthStep))[y2*img->nChannels + 1];
+  int b = ((uchar *)(img->imageData + x1*img->widthStep))[y1*img->nChannels + 2]
+	- ((uchar *)(img->imageData + x2*img->widthStep))[y2*img->nChannels + 2];
   return r*r+g*g+b*b;
 }
