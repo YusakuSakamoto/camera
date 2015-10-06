@@ -8,14 +8,14 @@ int main(int argc, char* argv[])
   cv::Mat input = cv::imread("./data/input.png",1);
   cv::Mat output = cv::Mat::zeros(input.rows,input.cols,CV_8UC3);
   
-  // label contenor
+  // create label container
   int **ilabels = new int *[input.rows];
   for(int i=0;i<input.rows;i++){
 	ilabels[i] = new int [input.cols];
   }
   
   // Mean shift
-  Meanshift shift;
+  Meanshift shift(input);
   int regionCount = shift.meanshift(input, ilabels);
 
   

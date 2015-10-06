@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <sstream>
+#include <string.h>
 #include <stack>
 #include <arc.h>
 #include <opencv2/core/core.hpp>
@@ -84,14 +85,28 @@ inline int getLabel2( std::vector<int>& unionfind, int l )
 	}
 }
 
-const int spatial_radius = 10;
-const double color_radius = 6.5;
-
 class Meanshift{
+  // function
  public:
-  Meanshift();
+  Meanshift(cv::Mat&);
   ~Meanshift();
+  int meanshift(cv::Mat&, int**);// terminal
+
+ private:
+  void meanshift_step_one();
+  int meanshift_step_two(int**,int*,float*);
+  void meanshift_step_three(int**,float*,int*);
+  void meanshift_step_four(int**,float*,int*);
+
+  // variable
+ private:
+  int regionCount;
+  int oldRegionCount;
+  IplImage imgbody;
+  IplImage* result;
   IplImage* img;
-  int MeanShift(const IplImage* img, int **labels);
-  int meanshift(cv::Mat& input, int **ilabels);
+  const int minRegion = 50;
+  const int spatial_radius = 10;
+  const double color_radius = 6.5;
+  const double color_radius2 = color_radius*color_radius;
 };

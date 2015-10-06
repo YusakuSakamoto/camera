@@ -1,35 +1,88 @@
 #include "../include/Meanshift.h"
 #include "../include/RAList.h"
 
-Meanshift::Meanshift(){
+Meanshift::Meanshift(cv::Mat& input):
+  regionCount(0)
+{
+  // Step Zero. prepare to use IplImage & Lab color space.
+  // use Lab rather than L*u*v!
+  // since Luv may produce noise points
+  //======================================================
+  imgbody = input;
+  img = &imgbody;
+  result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
+  cvCvtColor(img, result, CV_RGB2Lab);
+  //======================================================
 }
 
 Meanshift::~Meanshift(){
   cvReleaseImage( &img );
 }
 
-int Meanshift::meanshift(cv::Mat& input, int **ilabels){
-  IplImage imgbody = input;
-  img = &imgbody;
-  int regionCount = MeanShift(img, ilabels);
-  return regionCount;
-}
-
-
-int Meanshift::MeanShift(const IplImage* img, int **labels)
+int Meanshift::meanshift(cv::Mat& input, int **labels)
 {
   DECLARE_TIMING(timer);
   START_TIMING(timer);
 
-  int level = 1;
-  double color_radius2=color_radius*color_radius;
-  int minRegion = 50;
+  // Step One. Filtering stage of meanshift segmentation
+  // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
+  //==========================================================
+  meanshift_step_one();
 
-  // use Lab rather than L*u*v!
-  // since Luv may produce noise points
-  IplImage *result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
-  cvCvtColor(img, result, CV_RGB2Lab);
+  IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
+  cvCvtColor(result, tobeshow, CV_Lab2RGB);
+  cvSaveImage("./data/filtered.png", tobeshow);
+  cvReleaseImage(&tobeshow);
+  //===========================================================
 
+
+  // Step Two. Cluster
+  // Connect(接合)
+  //=============================================================
+  int *modePointCounts = new int[img->height*img->width];
+  memset(modePointCounts, 0, img->width*img->height*sizeof(int));
+  float *mode = new float[img->height*img->width*3];
+  
+  int regionCount = meanshift_step_two(labels,modePointCounts,mode);
+  std::cout<<"Mean Shift(Connect):" << regionCount << std::endl;
+  oldRegionCount = regionCount;
+  //============================================================
+
+
+  
+  // Step Three.
+  // TransitiveClosure(推移閉包)
+  //==========================================================
+  meanshift_step_three(labels,mode,modePointCounts);
+  //==========================================================
+  
+
+  
+  // Step Four.
+  // Prune(除去(最適化))
+  //===========================================================
+  meanshift_step_four(labels,mode,modePointCounts);
+  //==========================================================
+
+
+
+  //Step Five. 
+  // Output & after treatment
+  //======================================================
+  STOP_TIMING(timer);
+  std::cout<<"Mean Shift(ms):"<<GET_TIMING(timer)<<std::endl;
+  cvReleaseImage(&result);
+  delete []mode;
+  delete []modePointCounts;
+  //======================================================
+  
+  return regionCount;
+}
+
+
+
+
+void Meanshift::meanshift_step_one(){
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   for(int i=0;i<img->height;i++) 
@@ -109,19 +162,12 @@ int Meanshift::MeanShift(const IplImage* img, int **labels)
 		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1] = (uchar)U;
 		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2] = (uchar)V;
 	  }
+}
 
-  IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
-  cvCvtColor(result, tobeshow, CV_Lab2RGB);
-  cvSaveImage("./data/filtered.png", tobeshow);
-  cvReleaseImage(&tobeshow);
 
-  
+int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode){
   // Step Two. Cluster
   // Connect
-  int regionCount = 0;
-  int *modePointCounts = new int[img->height*img->width];
-  memset(modePointCounts, 0, img->width*img->height*sizeof(int));
-  float *mode = new float[img->height*img->width*3];
   {
 	int label = -1;
 	for(int i=0;i<img->height;i++) 
@@ -170,10 +216,17 @@ int Meanshift::MeanShift(const IplImage* img, int **labels)
 	//current Region count
 	regionCount = label+1;
   }
-  std::cout<<"Mean Shift(Connect):"<<regionCount<<std::endl;
-  int oldRegionCount = regionCount;
+  return regionCount;
+}
 
-  // TransitiveClosure
+
+
+
+
+
+void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCounts){
+  // Step three.
+  // TransitiveClosure(推移閉包)
   for(int counter = 0, deltaRegionCount = 1; counter<5 && deltaRegionCount>0; counter++)
 	{
 	  // 1.Build RAM using classifiction structure
@@ -304,151 +357,141 @@ int Meanshift::MeanShift(const IplImage* img, int **labels)
 	  oldRegionCount = regionCount;
 	  std::cout<<"Mean Shift(TransitiveClosure):"<<regionCount<<std::endl;
 	}
+}
 
-  // Prune
-  {
-	int *modePointCounts_buffer = new int[regionCount];
-	float *mode_buffer = new float[regionCount*3];
-	int	*label_buffer = new int [regionCount];
-	int minRegionCount;
+void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCounts){
+  int *modePointCounts_buffer = new int[regionCount];
+  float *mode_buffer = new float[regionCount*3];
+  int	*label_buffer = new int [regionCount];
+  int minRegionCount;
 
-	do{
-	  minRegionCount = 0;
-	  // Build RAM again
-	  RAList *raList = new RAList [regionCount], *raPool = new RAList [10*regionCount];	//10 is hard coded!
-	  for(int i = 0; i < regionCount; i++)
+  do{
+	minRegionCount = 0;
+	// Build RAM again
+	RAList *raList = new RAList [regionCount], *raPool = new RAList [10*regionCount];	//10 is hard coded!
+	for(int i = 0; i < regionCount; i++)
+	  {
+		raList[i].label = i;
+		raList[i].next = NULL;
+	  }
+	for(int i = 0; i < regionCount*10-1; i++)
+	  {
+		raPool[i].next = &raPool[i+1];
+	  }
+	raPool[10*regionCount-1].next = NULL;
+	RAList	*raNode1, *raNode2, *oldRAFreeList, *freeRAList = raPool;
+	for(int i=0;i<img->height;i++) 
+	  for(int j=0;j<img->width;j++)
 		{
-		  raList[i].label = i;
-		  raList[i].next = NULL;
-		}
-	  for(int i = 0; i < regionCount*10-1; i++)
-		{
-		  raPool[i].next = &raPool[i+1];
-		}
-	  raPool[10*regionCount-1].next = NULL;
-	  RAList	*raNode1, *raNode2, *oldRAFreeList, *freeRAList = raPool;
-	  for(int i=0;i<img->height;i++) 
-		for(int j=0;j<img->width;j++)
-		  {
-			if(i>0 && labels[i][j]!=labels[i-1][j])
-			  {
-				// Get 2 free node
-				raNode1			= freeRAList;
-				raNode2			= freeRAList->next;
-				oldRAFreeList	= freeRAList;
-				freeRAList		= freeRAList->next->next;
-				// connect the two region
-				raNode1->label	= labels[i][j];
-				raNode2->label	= labels[i-1][j];
-				if(raList[labels[i][j]].Insert(raNode2))	//already exists!
-				  freeRAList = oldRAFreeList;
-				else
-				  raList[labels[i-1][j]].Insert(raNode1);
-			  }
-			if(j>0 && labels[i][j]!=labels[i][j-1])
-			  {
-				// Get 2 free node
-				raNode1			= freeRAList;
-				raNode2			= freeRAList->next;
-				oldRAFreeList	= freeRAList;
-				freeRAList		= freeRAList->next->next;
-				// connect the two region
-				raNode1->label	= labels[i][j];
-				raNode2->label	= labels[i][j-1];
-				if(raList[labels[i][j]].Insert(raNode2))
-				  freeRAList = oldRAFreeList;
-				else
-				  raList[labels[i][j-1]].Insert(raNode1);
-			  }
-		  }
-	  // Find small regions
-	  for(int i = 0; i < regionCount; i++)
-		if(modePointCounts[i] < minRegion)
-		  {
-			minRegionCount++;
-			RAList *neighbor = raList[i].next;
-			int candidate = neighbor->label;
-			float minDistance = color_distance(&mode[3*i], &mode[3*candidate]);
-			neighbor = neighbor->next;
-			while(neighbor)
-			  {
-				float minDistance2 = color_distance(&mode[3*i], &mode[3*neighbor->label]);
-				if(minDistance2<minDistance)
-				  {
-					minDistance = minDistance2;
-					candidate = neighbor->label;
-				  }
-				neighbor = neighbor->next;
-			  }
-			int iCanEl = i, neighCanEl	= candidate;
-			while(raList[iCanEl].label != iCanEl) iCanEl = raList[iCanEl].label;
-			while(raList[neighCanEl].label != neighCanEl) neighCanEl = raList[neighCanEl].label;
-			if(iCanEl < neighCanEl)
-			  raList[neighCanEl].label	= iCanEl;
-			else
-			  {
-				//raList[raList[iCanEl].label].label	= neighCanEl;
-				raList[iCanEl].label = neighCanEl;
-			  }
-		  }
-	  for(int i = 0; i < regionCount; i++)
-		{
-		  int iCanEl	= i;
-		  while(raList[iCanEl].label != iCanEl)
-			iCanEl	= raList[iCanEl].label;
-		  raList[i].label	= iCanEl;
-		}
-	  memset(modePointCounts_buffer, 0, regionCount*sizeof(int));
-	  for(int i = 0; i < regionCount; i++)
-		{
-		  label_buffer[i]	= -1;
-		  mode_buffer[3*i+0]	= 0;
-		  mode_buffer[3*i+1]	= 0;
-		  mode_buffer[3*i+2]	= 0;
-		}
-	  for(int i=0;i<regionCount; i++)
-		{
-		  int iCanEl	= raList[i].label;
-		  modePointCounts_buffer[iCanEl] += modePointCounts[i];
-		  for(int k=0;k<3;k++)
-			mode_buffer[iCanEl*3+k] += mode[i*3+k]*modePointCounts[i];
-		}
-	  int	label = -1;
-	  for(int i = 0; i < regionCount; i++)
-		{
-		  int iCanEl	= raList[i].label;
-		  if(label_buffer[iCanEl] < 0)
+		  if(i>0 && labels[i][j]!=labels[i-1][j])
 			{
-			  label_buffer[iCanEl]	= ++label;
-
-			  for(int k = 0; k < 3; k++)
-				mode[label*3+k]	= (mode_buffer[iCanEl*3+k])/(modePointCounts_buffer[iCanEl]);
-
-			  modePointCounts[label]	= modePointCounts_buffer[iCanEl];
+			  // Get 2 free node
+			  raNode1			= freeRAList;
+			  raNode2			= freeRAList->next;
+			  oldRAFreeList	= freeRAList;
+			  freeRAList		= freeRAList->next->next;
+			  // connect the two region
+			  raNode1->label	= labels[i][j];
+			  raNode2->label	= labels[i-1][j];
+			  if(raList[labels[i][j]].Insert(raNode2))	//already exists!
+				freeRAList = oldRAFreeList;
+			  else
+				raList[labels[i-1][j]].Insert(raNode1);
+			}
+		  if(j>0 && labels[i][j]!=labels[i][j-1])
+			{
+			  // Get 2 free node
+			  raNode1			= freeRAList;
+			  raNode2			= freeRAList->next;
+			  oldRAFreeList	= freeRAList;
+			  freeRAList		= freeRAList->next->next;
+			  // connect the two region
+			  raNode1->label	= labels[i][j];
+			  raNode2->label	= labels[i][j-1];
+			  if(raList[labels[i][j]].Insert(raNode2))
+				freeRAList = oldRAFreeList;
+			  else
+				raList[labels[i][j-1]].Insert(raNode1);
 			}
 		}
-	  regionCount = label+1;
-	  for(int i = 0; i < img->height; i++)
-		for(int j = 0; j < img->width; j++)
-		  labels[i][j]	= label_buffer[raList[labels[i][j]].label];
+	// Find small regions
+	for(int i = 0; i < regionCount; i++)
+	  if(modePointCounts[i] < minRegion)
+		{
+		  minRegionCount++;
+		  RAList *neighbor = raList[i].next;
+		  int candidate = neighbor->label;
+		  float minDistance = color_distance(&mode[3*i], &mode[3*candidate]);
+		  neighbor = neighbor->next;
+		  while(neighbor)
+			{
+			  float minDistance2 = color_distance(&mode[3*i], &mode[3*neighbor->label]);
+			  if(minDistance2<minDistance)
+				{
+				  minDistance = minDistance2;
+				  candidate = neighbor->label;
+				}
+			  neighbor = neighbor->next;
+			}
+		  int iCanEl = i, neighCanEl	= candidate;
+		  while(raList[iCanEl].label != iCanEl) iCanEl = raList[iCanEl].label;
+		  while(raList[neighCanEl].label != neighCanEl) neighCanEl = raList[neighCanEl].label;
+		  if(iCanEl < neighCanEl)
+			raList[neighCanEl].label	= iCanEl;
+		  else
+			{
+			  //raList[raList[iCanEl].label].label	= neighCanEl;
+			  raList[iCanEl].label = neighCanEl;
+			}
+		}
+	for(int i = 0; i < regionCount; i++)
+	  {
+		int iCanEl	= i;
+		while(raList[iCanEl].label != iCanEl)
+		  iCanEl	= raList[iCanEl].label;
+		raList[i].label	= iCanEl;
+	  }
+	memset(modePointCounts_buffer, 0, regionCount*sizeof(int));
+	for(int i = 0; i < regionCount; i++)
+	  {
+		label_buffer[i]	= -1;
+		mode_buffer[3*i+0]	= 0;
+		mode_buffer[3*i+1]	= 0;
+		mode_buffer[3*i+2]	= 0;
+	  }
+	for(int i=0;i<regionCount; i++)
+	  {
+		int iCanEl	= raList[i].label;
+		modePointCounts_buffer[iCanEl] += modePointCounts[i];
+		for(int k=0;k<3;k++)
+		  mode_buffer[iCanEl*3+k] += mode[i*3+k]*modePointCounts[i];
+	  }
+	int	label = -1;
+	for(int i = 0; i < regionCount; i++)
+	  {
+		int iCanEl	= raList[i].label;
+		if(label_buffer[iCanEl] < 0)
+		  {
+			label_buffer[iCanEl]	= ++label;
 
-	  //Destroy RAM
-	  delete[] raList;
-	  delete[] raPool;
-	  std::cout<<"Mean Shift(Prune):"<<regionCount<<std::endl;
-	}while(minRegionCount > 0);
+			for(int k = 0; k < 3; k++)
+			  mode[label*3+k]	= (mode_buffer[iCanEl*3+k])/(modePointCounts_buffer[iCanEl]);
 
-	delete [] mode_buffer;
-	delete [] modePointCounts_buffer;
-	delete [] label_buffer;
-  }
-  
-  // Output
-  STOP_TIMING(timer);
-  std::cout<<"Mean Shift(ms):"<<GET_TIMING(timer)<<std::endl;
+			modePointCounts[label]	= modePointCounts_buffer[iCanEl];
+		  }
+	  }
+	regionCount = label+1;
+	for(int i = 0; i < img->height; i++)
+	  for(int j = 0; j < img->width; j++)
+		labels[i][j]	= label_buffer[raList[labels[i][j]].label];
 
-  cvReleaseImage(&result);
-  delete []mode;
-  delete []modePointCounts;
-  return regionCount;
+	//Destroy RAM
+	delete[] raList;
+	delete[] raPool;
+	std::cout<<"Mean Shift(Prune):"<<regionCount<<std::endl;
+  }while(minRegionCount > 0);
+
+  delete [] mode_buffer;
+  delete [] modePointCounts_buffer;
+  delete [] label_buffer;
 }
