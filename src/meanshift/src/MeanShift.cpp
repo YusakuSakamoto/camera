@@ -1,49 +1,22 @@
 #include "../include/Meanshift.h"
+#include "../include/RAList.h"
 
-RAList::RAList( void )
-{
-  label			= -1;
-  next			= 0;	//NULL
+Meanshift::Meanshift(){
 }
 
-RAList::~RAList( void )
-{}
-
-int RAList::Insert(RAList *entry)
-{
-  if(!next)
-	{
-	  next		= entry;
-	  entry->next = 0;
-	  return 0;
-	}
-  if(next->label > entry->label)
-	{
-	  entry->next	= next;
-	  next		= entry;
-	  return 0;
-	}
-  exists	= 0;
-  cur		= next;
-  while(cur)
-	{
-	  if(entry->label == cur->label)
-		{
-		  exists = 1;
-		  break;
-		}
-	  else if((!(cur->next))||(cur->next->label > entry->label))
-		{
-		  entry->next	= cur->next;
-		  cur->next	= entry;
-		  break;
-		}
-	  cur = cur->next;
-	}
-  return (int)(exists);
+Meanshift::~Meanshift(){
+  cvReleaseImage( &img );
 }
 
-int MeanShift(const IplImage* img, int **labels)
+int Meanshift::meanshift(cv::Mat& input, int **ilabels){
+  IplImage imgbody = input;
+  img = &imgbody;
+  int regionCount = MeanShift(img, ilabels);
+  return regionCount;
+}
+
+
+int Meanshift::MeanShift(const IplImage* img, int **labels)
 {
   DECLARE_TIMING(timer);
   START_TIMING(timer);
