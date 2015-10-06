@@ -3,17 +3,24 @@
 using namespace cv;
 using namespace std;
 
+int meanshift(IplImage* img, int **ilabels){
+  return MeanShift(img, ilabels);
+}
+
 int main(int argc, char* argv[])
 {
-  IplImage *img = cvLoadImage("./data/input.png");
-  cv::Mat output = cv::Mat::zeros(img->height,img->width,CV_8UC3);
+  //IplImage *img = cvLoadImage("./data/input.png");
+  cv::Mat input = cv::imread("./data/input.png",1);
+  cv::Mat output = cv::Mat::zeros(input.rows,input.cols,CV_8UC3);
   
   // Mean shift
-  int **ilabels = new int *[img->height];
-  for(int i=0;i<img->height;i++){
-	ilabels[i] = new int [img->width];
+  IplImage imgbody = input;
+  IplImage *img = &imgbody;
+  int **ilabels = new int *[input.rows];
+  for(int i=0;i<input.rows;i++){
+	ilabels[i] = new int [input.cols];
   }
-  int regionCount = MeanShift(img, ilabels);
+  int regionCount = meanshift(img, ilabels);
 
   
   //乱数生成
@@ -22,8 +29,8 @@ int main(int argc, char* argv[])
   gen.fill(color, cv::RNG::UNIFORM, cv::Scalar(0), cv::Scalar(pow(256,3)));
   
   //ランダム色を代入
-  for(int i=0;i<img->height;i++){
-	for(int j=0;j<img->width;j++)
+  for(int i=0;i<output.rows;i++){
+	for(int j=0;j<output.cols;j++)
 	  { 
 		int cl = ilabels[i][j];
 		int a = output.step*i + j*3;
@@ -33,11 +40,8 @@ int main(int argc, char* argv[])
 	  }
   }
 
-  cvNamedWindow("MeanShift",CV_WINDOW_AUTOSIZE);
-  cvShowImage("MeanShift",img);
   cv::imshow("output",output);
   cvWaitKey();
-  cvDestroyWindow("MeanShift");
   cvReleaseImage(&img);
 
   return 0;
