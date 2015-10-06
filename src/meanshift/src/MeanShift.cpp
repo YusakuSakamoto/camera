@@ -1,7 +1,18 @@
 #include "../include/Meanshift.h"
 #include "../include/RAList.h"
 
-Meanshift::Meanshift(){
+Meanshift::Meanshift(cv::Mat& input):
+  regionCount(0)
+{
+  // Step Zero. prepare to use IplImage & Lab color space.
+  // use Lab rather than L*u*v!
+  // since Luv may produce noise points
+  //======================================================
+  imgbody = input;
+  img = &imgbody;
+  result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
+  cvCvtColor(img, result, CV_RGB2Lab);
+  //======================================================
 }
 
 Meanshift::~Meanshift(){
@@ -10,30 +21,13 @@ Meanshift::~Meanshift(){
 
 int Meanshift::meanshift(cv::Mat& input, int **labels)
 {
-
-  
-  // Step Zero. prepare to use IplImage & Lab color space.
-  // use Lab rather than L*u*v!
-  // since Luv may produce noise points
-  //======================================================
   DECLARE_TIMING(timer);
   START_TIMING(timer);
-  
-  int level = 1;
-  IplImage imgbody = input;
-  img = &imgbody;
-  IplImage *result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
-  cvCvtColor(img, result, CV_RGB2Lab);
-  //======================================================
 
-
-  
-
-  
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   //==========================================================
-  meanshift_step_one(img,result);
+  meanshift_step_one();
 
   IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
   cvCvtColor(result, tobeshow, CV_Lab2RGB);
@@ -42,9 +36,6 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
   //===========================================================
 
 
-
-  
-  
   // Step Two. Cluster
   // Connect(接合)
   //=============================================================
@@ -52,32 +43,26 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
   memset(modePointCounts, 0, img->width*img->height*sizeof(int));
   float *mode = new float[img->height*img->width*3];
   
-  int regionCount = meanshift_step_two(img,result,labels,modePointCounts,mode);
-  std::cout<<"Mean Shift(Connect):"<<regionCount<<std::endl;
-  int oldRegionCount = regionCount;
+  int regionCount = meanshift_step_two(labels,modePointCounts,mode);
+  std::cout<<"Mean Shift(Connect):" << regionCount << std::endl;
+  oldRegionCount = regionCount;
   //============================================================
-
-
-
 
 
   
   // Step Three.
   // TransitiveClosure(推移閉包)
   //==========================================================
-  meanshift_step_three( img, result, regionCount,oldRegionCount,labels,mode,modePointCounts);
+  meanshift_step_three(labels,mode,modePointCounts);
   //==========================================================
   
-
-
 
   
   // Step Four.
   // Prune(除去(最適化))
   //===========================================================
-  meanshift_step_four( img, result, regionCount,oldRegionCount,labels,mode,modePointCounts);
+  meanshift_step_four(labels,mode,modePointCounts);
   //==========================================================
-
 
 
 
@@ -97,7 +82,7 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
 
 
 
-void Meanshift::meanshift_step_one(IplImage* img,IplImage* result){
+void Meanshift::meanshift_step_one(){
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   for(int i=0;i<img->height;i++) 
@@ -180,11 +165,9 @@ void Meanshift::meanshift_step_one(IplImage* img,IplImage* result){
 }
 
 
-int Meanshift::meanshift_step_two(IplImage* img,IplImage* result, int **labels,int* modePointCounts,float* mode){
+int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode){
   // Step Two. Cluster
   // Connect
-  int regionCount = 0;
-
   {
 	int label = -1;
 	for(int i=0;i<img->height;i++) 
@@ -241,7 +224,7 @@ int Meanshift::meanshift_step_two(IplImage* img,IplImage* result, int **labels,i
 
 
 
-void Meanshift::meanshift_step_three(IplImage* img,IplImage* result,int &regionCount,int& oldRegionCount,int** labels,float* mode,int* modePointCounts){
+void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCounts){
   // Step three.
   // TransitiveClosure(推移閉包)
   for(int counter = 0, deltaRegionCount = 1; counter<5 && deltaRegionCount>0; counter++)
@@ -376,7 +359,7 @@ void Meanshift::meanshift_step_three(IplImage* img,IplImage* result,int &regionC
 	}
 }
 
-void Meanshift::meanshift_step_four(IplImage* img,IplImage* result,int &regionCount,int& oldRegionCount,int** labels,float* mode,int* modePointCounts){
+void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCounts){
   int *modePointCounts_buffer = new int[regionCount];
   float *mode_buffer = new float[regionCount*3];
   int	*label_buffer = new int [regionCount];
