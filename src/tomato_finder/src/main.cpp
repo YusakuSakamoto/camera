@@ -3,6 +3,8 @@
 using namespace std;
 using namespace cv;
 
+myMutex cameramutex;
+
 void *video_finder(void *arg){
   //video setteing
   int i;

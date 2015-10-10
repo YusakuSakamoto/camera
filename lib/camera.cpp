@@ -3,8 +3,6 @@
 using namespace std;
 using namespace cv;
 
-string camera_param = "../../data/file.yml";
-
 void rotateCW90( cv::Mat& input, cv::Mat& output, const unsigned int width, const unsigned int height)
 {
   unsigned char *pImg;

@@ -102,6 +102,7 @@ private:
 #define KALMAN_MIN_RATIO 0.75
 #define color_radius 6.5
 #define spatial_radius 10
+#define camera_param "../../data/file.yml"
 
 #define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
 #define START_TIMING(s) timeStart_##s = 0
