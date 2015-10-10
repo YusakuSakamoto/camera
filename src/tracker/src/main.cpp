@@ -3,6 +3,7 @@
 using namespace std;
 using namespace cv;
 
+myMutex cameramutex;
 
 void *tracker(void *arg){
   //video setteing

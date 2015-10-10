@@ -9,17 +9,33 @@ Meanshift::Meanshift(cv::Mat& input):
   // since Luv may produce noise points
   //======================================================
   imgbody = input;
+  height = input.rows;
+  width = input.cols;
+  
   img = &imgbody;
   result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
   cvCvtColor(img, result, CV_RGB2Lab);
+  mode = new float[height*width*3];
+  modePointCounts = new int[height*width];
+  memset(modePointCounts, 0, width * height * sizeof(int));
   //======================================================
 }
 
 Meanshift::~Meanshift(){
+  //Step Five. 
+  // Output & after treatment
+  //======================================================
+  delete []mode;
+  delete []modePointCounts;
   cvReleaseImage( &img );
+  cvReleaseImage(&result);
+  //======================================================  
 }
 
-int Meanshift::meanshift(cv::Mat& input, int **labels)
+
+
+
+int Meanshift::meanshift(int **labels)
 {
   DECLARE_TIMING(timer);
   START_TIMING(timer);
@@ -27,53 +43,38 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   //==========================================================
-  meanshift_step_one();
-
+  meanshift_step_one();  
   IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
   cvCvtColor(result, tobeshow, CV_Lab2RGB);
   cvSaveImage("./data/filtered.png", tobeshow);
   cvReleaseImage(&tobeshow);
   //===========================================================
 
-
   // Step Two. Cluster
   // Connect(接合)
   //=============================================================
-  int *modePointCounts = new int[img->height*img->width];
-  memset(modePointCounts, 0, img->width*img->height*sizeof(int));
-  float *mode = new float[img->height*img->width*3];
-  
-  int regionCount = meanshift_step_two(labels,modePointCounts,mode);
+  meanshift_step_two(labels);
   std::cout<<"Mean Shift(Connect):" << regionCount << std::endl;
   oldRegionCount = regionCount;
-  //============================================================
-
-
+  //===========================================================
   
   // Step Three.
   // TransitiveClosure(推移閉包)
   //==========================================================
-  meanshift_step_three(labels,mode,modePointCounts);
+  meanshift_step_three(labels);
   //==========================================================
-  
-
-  
+    
   // Step Four.
   // Prune(除去(最適化))
   //===========================================================
-  meanshift_step_four(labels,mode,modePointCounts);
+  meanshift_step_four(labels);
   //==========================================================
-
-
 
   //Step Five. 
   // Output & after treatment
   //======================================================
   STOP_TIMING(timer);
   std::cout<<"Mean Shift(ms):"<<GET_TIMING(timer)<<std::endl;
-  cvReleaseImage(&result);
-  delete []mode;
-  delete []modePointCounts;
   //======================================================
   
   return regionCount;
@@ -83,10 +84,11 @@ int Meanshift::meanshift(cv::Mat& input, int **labels)
 
 
 void Meanshift::meanshift_step_one(){
+  
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
-  for(int i=0;i<img->height;i++) 
-	for(int j=0;j<img->width;j++)
+  for(int i=0; i < height; i++) 
+	for(int j=0; j < width; j++)
 	  {
 		int ic = i;
 		int jc = j;
@@ -101,7 +103,7 @@ void Meanshift::meanshift_step_one(){
 		U = U-128;
 		V = V-128;
 		double shift = 5;
-		for (int iters=0;shift > 3 && iters < 100;iters++) 
+		for (int iters=0; shift > 3 && iters < 100; iters++) 
 		  {
 			icOld = ic;
 			jcOld = jc;
@@ -165,16 +167,20 @@ void Meanshift::meanshift_step_one(){
 }
 
 
-int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode){
+
+
+
+
+void Meanshift::meanshift_step_two( int **labels){
   // Step Two. Cluster
   // Connect
   {
 	int label = -1;
-	for(int i=0;i<img->height;i++) 
-	  for(int j=0;j<img->width;j++)
+	for(int i=0; i < height; i++) 
+	  for(int j=0; j < width; j++)
 		labels[i][j] = -1;
-	for(int i=0;i<img->height;i++) 
-	  for(int j=0;j<img->width;j++)
+	for(int i=0; i < height; i++) 
+	  for(int j=0; j < width; j++)
 		if(labels[i][j]<0)
 		  {
 			labels[i][j] = ++label;
@@ -195,7 +201,7 @@ int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode
 				for(int k=0;k<8;k++)
 				  {
 					int i2 = p.x+dxdy[k][0], j2 = p.y+dxdy[k][1];
-					if(i2>=0 && j2>=0 && i2<img->height && j2<img->width && labels[i2][j2]<0 && color_distance(result, i,j,i2,j2)<color_radius2)
+					if(i2>=0 && j2>=0 && i2 < height && j2 < width && labels[i2][j2] < 0 && color_distance(result, i,j,i2,j2)<color_radius2)
 					  {
 						labels[i2][j2] = label;
 						neighStack.push(cvPoint(i2,j2));
@@ -216,7 +222,6 @@ int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode
 	//current Region count
 	regionCount = label+1;
   }
-  return regionCount;
 }
 
 
@@ -224,7 +229,7 @@ int Meanshift::meanshift_step_two( int **labels,int* modePointCounts,float* mode
 
 
 
-void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCounts){
+void Meanshift::meanshift_step_three(int** labels){
   // Step three.
   // TransitiveClosure(推移閉包)
   for(int counter = 0, deltaRegionCount = 1; counter<5 && deltaRegionCount>0; counter++)
@@ -242,8 +247,8 @@ void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCoun
 		}
 	  raPool[10*regionCount-1].next = NULL;
 	  RAList	*raNode1, *raNode2, *oldRAFreeList, *freeRAList = raPool;
-	  for(int i=0;i<img->height;i++) 
-		for(int j=0;j<img->width;j++)
+	  for(int i=0; i < height; i++) 
+		for(int j=0; j < width; j++)
 		  {
 			if(i>0 && labels[i][j]!=labels[i-1][j])
 			  {
@@ -280,7 +285,7 @@ void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCoun
 	  // 2.Treat each region Ri as a disjoint set
 	  for(int i = 0; i < regionCount; i++)
 		{
-		  RAList	*neighbor = raList[i].next;
+		  RAList *neighbor = raList[i].next;
 		  while(neighbor)
 			{
 			  if(color_distance(&mode[3*i], &mode[3*neighbor->label])<color_radius2)
@@ -312,7 +317,7 @@ void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCoun
 	  float *mode_buffer = new float[regionCount*3];
 	  int	*label_buffer = new int[regionCount];
 
-	  for(int i=0;i<regionCount; i++)
+	  for(int i=0; i < regionCount; i++)
 		{
 		  label_buffer[i]	= -1;
 		  mode_buffer[i*3+0] = 0;
@@ -341,8 +346,8 @@ void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCoun
 			}
 		}
 	  regionCount = label+1;
-	  for(int i = 0; i < img->height; i++)
-		for(int j = 0; j < img->width; j++)
+	  for(int i = 0; i < height; i++)
+		for(int j = 0; j < width; j++)
 		  labels[i][j]	= label_buffer[raList[labels[i][j]].label];
 
 	  delete [] mode_buffer;
@@ -355,11 +360,11 @@ void Meanshift::meanshift_step_three(int** labels,float* mode,int* modePointCoun
 
 	  deltaRegionCount = oldRegionCount - regionCount;
 	  oldRegionCount = regionCount;
-	  std::cout<<"Mean Shift(TransitiveClosure):"<<regionCount<<std::endl;
+	  std::cout << "Mean Shift(TransitiveClosure):" << regionCount << std::endl;
 	}
 }
 
-void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCounts){
+void Meanshift::meanshift_step_four(int** labels){
   int *modePointCounts_buffer = new int[regionCount];
   float *mode_buffer = new float[regionCount*3];
   int	*label_buffer = new int [regionCount];
@@ -380,8 +385,8 @@ void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCount
 	  }
 	raPool[10*regionCount-1].next = NULL;
 	RAList	*raNode1, *raNode2, *oldRAFreeList, *freeRAList = raPool;
-	for(int i=0;i<img->height;i++) 
-	  for(int j=0;j<img->width;j++)
+	for(int i=0; i < height; i++) 
+	  for(int j=0; j < width; j++)
 		{
 		  if(i>0 && labels[i][j]!=labels[i-1][j])
 			{
@@ -448,7 +453,7 @@ void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCount
 	  {
 		int iCanEl	= i;
 		while(raList[iCanEl].label != iCanEl)
-		  iCanEl	= raList[iCanEl].label;
+		  iCanEl = raList[iCanEl].label;
 		raList[i].label	= iCanEl;
 	  }
 	memset(modePointCounts_buffer, 0, regionCount*sizeof(int));
@@ -481,14 +486,14 @@ void Meanshift::meanshift_step_four(int** labels,float* mode,int* modePointCount
 		  }
 	  }
 	regionCount = label+1;
-	for(int i = 0; i < img->height; i++)
-	  for(int j = 0; j < img->width; j++)
+	for(int i = 0; i < height; i++)
+	  for(int j = 0; j < width; j++)
 		labels[i][j]	= label_buffer[raList[labels[i][j]].label];
 
 	//Destroy RAM
 	delete[] raList;
 	delete[] raPool;
-	std::cout<<"Mean Shift(Prune):"<<regionCount<<std::endl;
+	std::cout << "Mean Shift(Prune):" << regionCount << std::endl;
   }while(minRegionCount > 0);
 
   delete [] mode_buffer;

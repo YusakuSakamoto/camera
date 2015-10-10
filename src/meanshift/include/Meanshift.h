@@ -90,16 +90,18 @@ class Meanshift{
  public:
   Meanshift(cv::Mat&);
   ~Meanshift();
-  int meanshift(cv::Mat&, int**);// terminal
+  int meanshift(int**);// terminal
 
  private:
   void meanshift_step_one();
-  int meanshift_step_two(int**,int*,float*);
-  void meanshift_step_three(int**,float*,int*);
-  void meanshift_step_four(int**,float*,int*);
+  void meanshift_step_two(int**);
+  void meanshift_step_three(int**);
+  void meanshift_step_four(int**);
 
   // variable
  private:
+  int height;
+  int width;
   int regionCount;
   int oldRegionCount;
   IplImage imgbody;
@@ -109,4 +111,6 @@ class Meanshift{
   const int spatial_radius = 10;
   const double color_radius = 6.5;
   const double color_radius2 = color_radius*color_radius;
+  float *mode;
+  int *modePointCounts;
 };

@@ -3,6 +3,8 @@
 using namespace std;
 using namespace cv;
 
+myMutex cameramutex;
+
 void *myThread(void *arg)
 {
   int i;

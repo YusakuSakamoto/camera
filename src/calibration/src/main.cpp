@@ -3,6 +3,8 @@
 using namespace std;
 using namespace cv;
 
+myMutex cameramutex;
+
 void *mycalibration(void *arg)
 {
   cout << endl << "Reading: " << endl;

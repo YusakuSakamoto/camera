@@ -16,7 +16,7 @@ int main(int argc, char* argv[])
   
   // Mean shift
   Meanshift shift(input);
-  int regionCount = shift.meanshift(input, ilabels);
+  int regionCount = shift.meanshift(ilabels);
 
   
   //乱数生成

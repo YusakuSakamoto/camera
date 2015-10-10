@@ -6,7 +6,7 @@ int
 main (int argc, char **argv)
 {
   cv::Mat src_img;
-  const char *imagename = argc > 1 ? argv[1] : "../image/bike_sign.png";
+  const char *imagename = argc > 1 ? argv[1] : "../../data/0.jpg";
   cv::Mat frame = cv::imread(imagename, 0);
   cv::resize(frame,src_img,cv::Size(W,H),0,0);
   if(!src_img.data)
