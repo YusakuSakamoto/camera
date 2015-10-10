@@ -90,7 +90,7 @@ class Meanshift{
  public:
   Meanshift(cv::Mat&);
   ~Meanshift();
-  int meanshift(int**);// terminal
+  void meanshift(int**);// terminal
 
  private:
   void meanshift_step_one();
@@ -99,10 +99,12 @@ class Meanshift{
   void meanshift_step_four(int**);
 
   // variable
+ public:
+  int regionCount;
+  
  private:
   int height;
   int width;
-  int regionCount;
   int oldRegionCount;
   IplImage imgbody;
   IplImage* result;

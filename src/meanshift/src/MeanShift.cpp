@@ -13,7 +13,7 @@ Meanshift::Meanshift(cv::Mat& input):
   width = input.cols;
   
   img = &imgbody;
-  result = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
+  result = cvCreateImage(cvGetSize(img),img->depth,input.channels());
   cvCvtColor(img, result, CV_RGB2Lab);
   mode = new float[height*width*3];
   modePointCounts = new int[height*width];
@@ -28,18 +28,18 @@ Meanshift::~Meanshift(){
   delete []mode;
   delete []modePointCounts;
   cvReleaseImage( &img );
-  cvReleaseImage(&result);
+  cvReleaseImage( &result );
   //======================================================  
 }
 
 
 
 
-int Meanshift::meanshift(int **labels)
+void Meanshift::meanshift(int **labels)
 {
   DECLARE_TIMING(timer);
   START_TIMING(timer);
-
+  
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   //==========================================================
@@ -69,15 +69,13 @@ int Meanshift::meanshift(int **labels)
   //===========================================================
   meanshift_step_four(labels);
   //==========================================================
-
+  
   //Step Five. 
   // Output & after treatment
   //======================================================
   STOP_TIMING(timer);
   std::cout<<"Mean Shift(ms):"<<GET_TIMING(timer)<<std::endl;
   //======================================================
-  
-  return regionCount;
 }
 
 
@@ -120,11 +118,11 @@ void Meanshift::meanshift_step_one(){
 
 			int i2from = max(0,i-spatial_radius), i2to = min(img->height, i+spatial_radius+1);
 			int j2from = max(0,j-spatial_radius), j2to = min(img->width, j+spatial_radius+1);
-			for (int i2=i2from; i2 < i2to;i2++) {
+			for (int i2=i2from; i2 < i2to; i2++) {
 			  for (int j2=j2from; j2 < j2to; j2++) {
-				float L2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 0],
-				  U2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 1],
-				  V2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 2];
+				float L2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 0];
+				float U2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 1];
+				float V2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 2];
 				L2 = L2*100/255;
 				U2 = U2-128;
 				V2 = V2-128;
@@ -168,60 +166,55 @@ void Meanshift::meanshift_step_one(){
 
 
 
-
-
-
 void Meanshift::meanshift_step_two( int **labels){
   // Step Two. Cluster
   // Connect
-  {
-	int label = -1;
-	for(int i=0; i < height; i++) 
-	  for(int j=0; j < width; j++)
-		labels[i][j] = -1;
-	for(int i=0; i < height; i++) 
-	  for(int j=0; j < width; j++)
-		if(labels[i][j]<0)
-		  {
-			labels[i][j] = ++label;
-			float L = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 0],
-			  U = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1],
-			  V = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2];
-			mode[label*3+0] = L*100/255;
-			mode[label*3+1] = 354*U/255-134;
-			mode[label*3+2] = 256*V/255-140;
-			// Fill
-			std::stack<CvPoint> neighStack;
-			neighStack.push(cvPoint(i,j));
-			const int dxdy[][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
-			while(!neighStack.empty())
-			  {
-				CvPoint p = neighStack.top();
-				neighStack.pop();
-				for(int k=0;k<8;k++)
-				  {
-					int i2 = p.x+dxdy[k][0], j2 = p.y+dxdy[k][1];
-					if(i2>=0 && j2>=0 && i2 < height && j2 < width && labels[i2][j2] < 0 && color_distance(result, i,j,i2,j2)<color_radius2)
-					  {
-						labels[i2][j2] = label;
-						neighStack.push(cvPoint(i2,j2));
-						modePointCounts[label]++;
-						L = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 0];
-						U = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 1];
-						V = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 2];
-						mode[label*3+0] += L*100/255;
-						mode[label*3+1] += 354*U/255-134;
-						mode[label*3+2] += 256*V/255-140;
-					  }
-				  }
-			  }
-			mode[label*3+0] /= modePointCounts[label];
-			mode[label*3+1] /= modePointCounts[label];
-			mode[label*3+2] /= modePointCounts[label];
-		  }
-	//current Region count
-	regionCount = label+1;
-  }
+  int label = -1;
+  for(int i=0; i < height; i++) 
+	for(int j=0; j < width; j++)
+	  labels[i][j] = -1;
+  for(int i=0; i < height; i++) 
+	for(int j=0; j < width; j++)
+	  if(labels[i][j]<0)
+		{
+		  labels[i][j] = ++label;
+		  float L = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 0],
+			U = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1],
+			V = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2];
+		  mode[label*3+0] = L*100/255;
+		  mode[label*3+1] = 354*U/255-134;
+		  mode[label*3+2] = 256*V/255-140;
+		  // Fill
+		  std::stack<CvPoint> neighStack;
+		  neighStack.push(cvPoint(i,j));
+		  const int dxdy[][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
+		  while(!neighStack.empty())
+			{
+			  CvPoint p = neighStack.top();
+			  neighStack.pop();
+			  for(int k=0;k<8;k++)
+				{
+				  int i2 = p.x+dxdy[k][0], j2 = p.y+dxdy[k][1];
+				  if(i2>=0 && j2>=0 && i2 < height && j2 < width && labels[i2][j2] < 0 && color_distance(result, i,j,i2,j2)<color_radius2)
+					{
+					  labels[i2][j2] = label;
+					  neighStack.push(cvPoint(i2,j2));
+					  modePointCounts[label]++;
+					  L = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 0];
+					  U = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 1];
+					  V = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 2];
+					  mode[label*3+0] += L*100/255;
+					  mode[label*3+1] += 354*U/255-134;
+					  mode[label*3+2] += 256*V/255-140;
+					}
+				}
+			}
+		  mode[label*3+0] /= modePointCounts[label];
+		  mode[label*3+1] /= modePointCounts[label];
+		  mode[label*3+2] /= modePointCounts[label];
+		}
+  //current Region count
+  regionCount = label+1;
 }
 
 
@@ -235,7 +228,8 @@ void Meanshift::meanshift_step_three(int** labels){
   for(int counter = 0, deltaRegionCount = 1; counter<5 && deltaRegionCount>0; counter++)
 	{
 	  // 1.Build RAM using classifiction structure
-	  RAList *raList = new RAList [regionCount], *raPool = new RAList [10*regionCount];	//10 is hard coded!
+	  RAList *raList = new RAList [regionCount];
+	  RAList *raPool = new RAList [10*regionCount];	//10 is hard coded!
 	  for(int i = 0; i < regionCount; i++)
 		{
 		  raList[i].label = i;
@@ -364,6 +358,8 @@ void Meanshift::meanshift_step_three(int** labels){
 	}
 }
 
+
+
 void Meanshift::meanshift_step_four(int** labels){
   int *modePointCounts_buffer = new int[regionCount];
   float *mode_buffer = new float[regionCount*3];
@@ -373,7 +369,8 @@ void Meanshift::meanshift_step_four(int** labels){
   do{
 	minRegionCount = 0;
 	// Build RAM again
-	RAList *raList = new RAList [regionCount], *raPool = new RAList [10*regionCount];	//10 is hard coded!
+	RAList *raList = new RAList [regionCount];
+	RAList *raPool = new RAList [10*regionCount];	//10 is hard coded!
 	for(int i = 0; i < regionCount; i++)
 	  {
 		raList[i].label = i;
@@ -384,7 +381,10 @@ void Meanshift::meanshift_step_four(int** labels){
 		raPool[i].next = &raPool[i+1];
 	  }
 	raPool[10*regionCount-1].next = NULL;
-	RAList	*raNode1, *raNode2, *oldRAFreeList, *freeRAList = raPool;
+	RAList *raNode1;
+	RAList *raNode2;
+	RAList *oldRAFreeList;
+	RAList *freeRAList = raPool;
 	for(int i=0; i < height; i++) 
 	  for(int j=0; j < width; j++)
 		{
@@ -393,7 +393,7 @@ void Meanshift::meanshift_step_four(int** labels){
 			  // Get 2 free node
 			  raNode1			= freeRAList;
 			  raNode2			= freeRAList->next;
-			  oldRAFreeList	= freeRAList;
+			  oldRAFreeList	    = freeRAList;
 			  freeRAList		= freeRAList->next->next;
 			  // connect the two region
 			  raNode1->label	= labels[i][j];
