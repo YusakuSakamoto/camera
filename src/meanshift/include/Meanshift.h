@@ -109,6 +109,8 @@ class Meanshift{
   IplImage imgbody;
   IplImage* result;
   IplImage* img;
+  cv::Mat in;
+  cv::Mat out;
   const int minRegion = 50;
   const int spatial_radius = 10;
   const double color_radius = 6.5;

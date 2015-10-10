@@ -10,11 +10,11 @@ LIBS 	= `pkg-config --libs --static opencv` `pkg-config --libs libusb-1.0`
 
 all: $(OUT)
 
-$(OUT):main.o 
-	$(CXX) main.o -o $@  $(LIBS) $(FREE_LIBS)
+$(OUT):main.cpp
+	$(CXX) $< $(LIBS) $(FREE_LIBS) $(INCLUDE) $(CFLAGS) -o $@
 
-main.o:main.cpp
-	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
+#main.o:main.cpp
+#	$(CXX) -c $< $(INCLUDE) $(CFLAGS) -o $@
 
 clean:
 	rm -rf ./bin/*.o $(OUT)
