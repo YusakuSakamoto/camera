@@ -16,8 +16,7 @@ int main(int argc, char* argv[])
   
   // Mean shift
   Meanshift shift(input);
-  shift.meanshift(ilabels);
-  
+  shift.meanshift(ilabels);  
   
   //乱数生成
   vector<int> color(shift.regionCount);
@@ -34,15 +33,13 @@ int main(int argc, char* argv[])
 		output.data[a+2] = (color[cl] >> 8)&255;
 		output.data[a+2] = (color[cl] >> 16)&255;
 	  }
-  }
-  
+  }  
 
   // 結果表示
   cv::imshow("input",input);
   cv::imshow("output",output);
   cvWaitKey();
   
-
   // メモリ解放
   input.release();
   output.release();

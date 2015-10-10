@@ -13,11 +13,6 @@ Meanshift::Meanshift(cv::Mat& input):
   
   height = input.rows;
   width = input.cols;
-
-  imgbody = input;
-  img = &imgbody;
-  result = cvCreateImage(cvGetSize(img),img->depth,input.channels());
-  cvCvtColor(img, result, CV_RGB2Lab);
   
   mode = new float[height*width*3];
   modePointCounts = new int[height*width];
@@ -31,8 +26,6 @@ Meanshift::~Meanshift(){
   //======================================================
   delete []mode;
   delete []modePointCounts;
-  cvReleaseImage( &img );
-  cvReleaseImage( &result );
   //======================================================  
 }
 
@@ -90,93 +83,87 @@ void Meanshift::meanshift_step_one(){
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   for(int i=0; i < height; i++) 
-	for(int j=0; j < width; j++)
-	  {
-		int ic = i;
-		int jc = j;
-		int icOld, jcOld;
-		float LOld, UOld, VOld;
+	for(int j=0; j < width; j++){
+	  int ic = i;
+	  int jc = j;
+	  int icOld, jcOld;
+	  float LOld, UOld, VOld;
 		
-		int a = out.step*i+j*3;
-		float L = out.data[a+0];
-		float U = out.data[a+1];
-		float V = out.data[a+2];
+	  int a = out.step*i+j*3;
+	  float L = out.data[a+0];
+	  float U = out.data[a+1];
+	  float V = out.data[a+2];
 
-		// in the case of 8-bit and 16-bit images R, G and B are converted to floating-point format and scaled to fit 0 to 1 range
-		// http://opencv.willowgarage.com/documentation/c/miscellaneous_image_transformations.html
-		L = L*100/255;
-		U = U-128;
-		V = V-128;
-		double shift = 5;
-		for (int iters=0; shift > 3 && iters < 100; iters++) 
-		  {
-			icOld = ic;
-			jcOld = jc;
-			LOld = L;
-			UOld = U;
-			VOld = V;
+	  // in the case of 8-bit and 16-bit images R, G and B are converted to floating-point format and scaled to fit 0 to 1 range
+	  // http://opencv.willowgarage.com/documentation/c/miscellaneous_image_transformations.html
+	  L = L*100/255;
+	  U = U-128;
+	  V = V-128;
+	  double shift = 5;
+	  for (int iters=0; shift > 3 && iters < 100; iters++){
+		icOld = ic;
+		jcOld = jc;
+		LOld = L;
+		UOld = U;
+		VOld = V;
 
-			float mi = 0;
-			float mj = 0;
-			float mL = 0;
-			float mU = 0;
-			float mV = 0;
-			int num=0;
+		float mi = 0;
+		float mj = 0;
+		float mL = 0;
+		float mU = 0;
+		float mV = 0;
+		int num=0;
 
-			int i2from = max(0,i-spatial_radius), i2to = min(height, i+spatial_radius+1);
-			int j2from = max(0,j-spatial_radius), j2to = min(width, j+spatial_radius+1);
-			for (int i2=i2from; i2 < i2to; i2++) {
-			  for (int j2=j2from; j2 < j2to; j2++) {
-				int a2 = out.step*i2 + j2*3;
-				float L2 = (float)out.data[a2 + 0];
-				float U2 = (float)out.data[a2 + 1];
-				float V2 = (float)out.data[a2 + 2];
+		int i2from = max(0,i-spatial_radius), i2to = min(height, i+spatial_radius+1);
+		int j2from = max(0,j-spatial_radius), j2to = min(width, j+spatial_radius+1);
+		for (int i2=i2from; i2 < i2to; i2++) {
+		  for (int j2=j2from; j2 < j2to; j2++) {
+			int a2 = out.step*i2 + j2*3;
+			float L2 = (float)out.data[a2 + 0];
+			float U2 = (float)out.data[a2 + 1];
+			float V2 = (float)out.data[a2 + 2];
 				
-				L2 = L2*100/255;
-				U2 = U2-128;
-				V2 = V2-128;
+			L2 = L2*100/255;
+			U2 = U2-128;
+			V2 = V2-128;
 
-				double dL = L2 - L;
-				double dU = U2 - U;
-				double dV = V2 - V;
-				if (dL*dL+dU*dU+dV*dV <= color_radius2) {
-				  mi += i2;
-				  mj += j2;
-				  mL += L2;
-				  mU += U2;
-				  mV += V2;
-				  num++;
-				}
-			  }
+			double dL = L2 - L;
+			double dU = U2 - U;
+			double dV = V2 - V;
+			if (dL*dL+dU*dU+dV*dV <= color_radius2) {
+			  mi += i2;
+			  mj += j2;
+			  mL += L2;
+			  mU += U2;
+			  mV += V2;
+			  num++;
 			}
-			float num_ = 1.f/num;
-			L = mL*num_;
-			U = mU*num_;
-			V = mV*num_;
-			ic = (int) (mi*num_+0.5);
-			jc = (int) (mj*num_+0.5);
-			int di = ic-icOld;
-			int dj = jc-jcOld;
-			double dL = L-LOld;
-			double dU = U-UOld;
-			double dV = V-VOld;
-
-			shift = di*di+dj*dj+dL*dL+dU*dU+dV*dV; 
 		  }
+		}
+		float num_ = 1.f/num;
+		L = mL*num_;
+		U = mU*num_;
+		V = mV*num_;
+		ic = (int) (mi*num_+0.5);
+		jc = (int) (mj*num_+0.5);
+		int di = ic-icOld;
+		int dj = jc-jcOld;
+		double dL = L-LOld;
+		double dU = U-UOld;
+		double dV = V-VOld;
 
-		L = L*255/100;
-		U = U+128;
-		V = V+128;
-
-		a = out.step*i + j*3;
-		out.data[a + 0] = (uchar)L;
-		out.data[a + 1] = (uchar)U;
-	    out.data[a + 2] = (uchar)V;
-
-		((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 0] = (uchar)L;
-		((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 1] = (uchar)U;
-		((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 2] = (uchar)V;
+		shift = di*di+dj*dj+dL*dL+dU*dU+dV*dV; 
 	  }
+
+	  L = L*255/100;
+	  U = U+128;
+	  V = V+128;
+
+	  a = out.step*i + j*3;
+	  out.data[a+0] = (uchar)L;
+	  out.data[a+1] = (uchar)U;
+	  out.data[a+2] = (uchar)V;
+	}
 }
 
 
@@ -190,44 +177,48 @@ void Meanshift::meanshift_step_two( int **labels){
 	  labels[i][j] = -1;
   for(int i=0; i < height; i++) 
 	for(int j=0; j < width; j++)
-	  if(labels[i][j]<0)
-		{
-		  labels[i][j] = ++label;
-		  float L = (float)((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 0],
-			U = (float)((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 1],
-			V = (float)((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 2];
-		  mode[label*3+0] = L*100/255;
-		  mode[label*3+1] = 354*U/255-134;
-		  mode[label*3+2] = 256*V/255-140;
-		  // Fill
-		  std::stack<CvPoint> neighStack;
-		  neighStack.push(cvPoint(i,j));
-		  const int dxdy[][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
-		  while(!neighStack.empty())
+	  if(labels[i][j]<0){
+		labels[i][j] = ++label;
+		  
+		int a = out.step*i+j*3;
+		float L = out.data[a+0];
+		float U = out.data[a+1];
+		float V = out.data[a+2];
+
+		mode[label*3+0] = L*100/255;
+		mode[label*3+1] = 354*U/255-134;
+		mode[label*3+2] = 256*V/255-140;
+		// Fill
+		std::stack<CvPoint> neighStack;
+		neighStack.push(cvPoint(i,j));
+		const int dxdy[][2] = {{-1,-1},{-1,0},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}};
+		while(!neighStack.empty()){
+		  CvPoint p = neighStack.top();
+		  neighStack.pop();
+		  for(int k=0; k<8; k++)
 			{
-			  CvPoint p = neighStack.top();
-			  neighStack.pop();
-			  for(int k=0;k<8;k++)
+			  int i2 = p.x+dxdy[k][0], j2 = p.y+dxdy[k][1];
+			  if( i2>=0 && j2>=0 && i2 < height && j2 < width && labels[i2][j2] < 0 && color_distance( out, i, j, i2, j2)<color_radius2)
 				{
-				  int i2 = p.x+dxdy[k][0], j2 = p.y+dxdy[k][1];
-				  if(i2>=0 && j2>=0 && i2 < height && j2 < width && labels[i2][j2] < 0 && color_distance(result, i,j,i2,j2)<color_radius2)
-					{
-					  labels[i2][j2] = label;
-					  neighStack.push(cvPoint(i2,j2));
-					  modePointCounts[label]++;
-					  L = (float)((uchar *)(result->imageData + i2*result->widthStep))[j2*result->nChannels + 0];
-					  U = (float)((uchar *)(result->imageData + i2*result->widthStep))[j2*result->nChannels + 1];
-					  V = (float)((uchar *)(result->imageData + i2*result->widthStep))[j2*result->nChannels + 2];
-					  mode[label*3+0] += L*100/255;
-					  mode[label*3+1] += 354*U/255-134;
-					  mode[label*3+2] += 256*V/255-140;
-					}
+				  labels[i2][j2] = label;
+				  neighStack.push(cvPoint(i2,j2));
+				  modePointCounts[label]++;
+
+				  a = out.step*i+j*3;
+				  L = out.data[a+0];
+				  U = out.data[a+1];
+				  V = out.data[a+2];
+					  
+				  mode[label*3+0] += L*100/255;
+				  mode[label*3+1] += 354*U/255-134;
+				  mode[label*3+2] += 256*V/255-140;
 				}
 			}
-		  mode[label*3+0] /= modePointCounts[label];
-		  mode[label*3+1] /= modePointCounts[label];
-		  mode[label*3+2] /= modePointCounts[label];
 		}
+		mode[label*3+0] /= modePointCounts[label];
+		mode[label*3+1] /= modePointCounts[label];
+		mode[label*3+2] /= modePointCounts[label];
+	  }
   //current Region count
   regionCount = label+1;
 }
