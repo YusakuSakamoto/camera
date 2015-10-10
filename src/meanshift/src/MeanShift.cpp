@@ -8,13 +8,17 @@ Meanshift::Meanshift(cv::Mat& input):
   // use Lab rather than L*u*v!
   // since Luv may produce noise points
   //======================================================
-  imgbody = input;
+  input.copyTo( in );
+  cv::cvtColor( in, out, CV_RGB2Lab);
+  
   height = input.rows;
   width = input.cols;
-  
+
+  imgbody = input;
   img = &imgbody;
   result = cvCreateImage(cvGetSize(img),img->depth,input.channels());
   cvCvtColor(img, result, CV_RGB2Lab);
+  
   mode = new float[height*width*3];
   modePointCounts = new int[height*width];
   memset(modePointCounts, 0, width * height * sizeof(int));
@@ -43,11 +47,11 @@ void Meanshift::meanshift(int **labels)
   // Step One. Filtering stage of meanshift segmentation
   // http://rsbweb.nih.gov/ij/plugins/download/Mean_Shift.java
   //==========================================================
-  meanshift_step_one();  
-  IplImage *tobeshow = cvCreateImage(cvGetSize(img),img->depth,img->nChannels);
-  cvCvtColor(result, tobeshow, CV_Lab2RGB);
-  cvSaveImage("./data/filtered.png", tobeshow);
-  cvReleaseImage(&tobeshow);
+  meanshift_step_one();
+  cv::Mat save;
+  cv::cvtColor(out,save,CV_Lab2RGB);
+  cv::imwrite("./data/filtered.png", save);
+  save.release();
   //===========================================================
 
   // Step Two. Cluster
@@ -92,9 +96,12 @@ void Meanshift::meanshift_step_one(){
 		int jc = j;
 		int icOld, jcOld;
 		float LOld, UOld, VOld;
-		float L = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 0];
-		float U = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1];
-		float V = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2];
+		
+		int a = out.step*i+j*3;
+		float L = out.data[a+0];
+		float U = out.data[a+1];
+		float V = out.data[a+2];
+
 		// in the case of 8-bit and 16-bit images R, G and B are converted to floating-point format and scaled to fit 0 to 1 range
 		// http://opencv.willowgarage.com/documentation/c/miscellaneous_image_transformations.html
 		L = L*100/255;
@@ -116,13 +123,15 @@ void Meanshift::meanshift_step_one(){
 			float mV = 0;
 			int num=0;
 
-			int i2from = max(0,i-spatial_radius), i2to = min(img->height, i+spatial_radius+1);
-			int j2from = max(0,j-spatial_radius), j2to = min(img->width, j+spatial_radius+1);
+			int i2from = max(0,i-spatial_radius), i2to = min(height, i+spatial_radius+1);
+			int j2from = max(0,j-spatial_radius), j2to = min(width, j+spatial_radius+1);
 			for (int i2=i2from; i2 < i2to; i2++) {
 			  for (int j2=j2from; j2 < j2to; j2++) {
-				float L2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 0];
-				float U2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 1];
-				float V2 = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 2];
+				int a2 = out.step*i2 + j2*3;
+				float L2 = (float)out.data[a2 + 0];
+				float U2 = (float)out.data[a2 + 1];
+				float V2 = (float)out.data[a2 + 2];
+				
 				L2 = L2*100/255;
 				U2 = U2-128;
 				V2 = V2-128;
@@ -158,9 +167,15 @@ void Meanshift::meanshift_step_one(){
 		L = L*255/100;
 		U = U+128;
 		V = V+128;
-		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 0] = (uchar)L;
-		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1] = (uchar)U;
-		((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2] = (uchar)V;
+
+		a = out.step*i + j*3;
+		out.data[a + 0] = (uchar)L;
+		out.data[a + 1] = (uchar)U;
+	    out.data[a + 2] = (uchar)V;
+
+		((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 0] = (uchar)L;
+		((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 1] = (uchar)U;
+		((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 2] = (uchar)V;
 	  }
 }
 
@@ -178,9 +193,9 @@ void Meanshift::meanshift_step_two( int **labels){
 	  if(labels[i][j]<0)
 		{
 		  labels[i][j] = ++label;
-		  float L = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 0],
-			U = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 1],
-			V = (float)((uchar *)(result->imageData + i*img->widthStep))[j*result->nChannels + 2];
+		  float L = (float)((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 0],
+			U = (float)((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 1],
+			V = (float)((uchar *)(result->imageData + i*result->widthStep))[j*result->nChannels + 2];
 		  mode[label*3+0] = L*100/255;
 		  mode[label*3+1] = 354*U/255-134;
 		  mode[label*3+2] = 256*V/255-140;
@@ -200,9 +215,9 @@ void Meanshift::meanshift_step_two( int **labels){
 					  labels[i2][j2] = label;
 					  neighStack.push(cvPoint(i2,j2));
 					  modePointCounts[label]++;
-					  L = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 0];
-					  U = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 1];
-					  V = (float)((uchar *)(result->imageData + i2*img->widthStep))[j2*result->nChannels + 2];
+					  L = (float)((uchar *)(result->imageData + i2*result->widthStep))[j2*result->nChannels + 0];
+					  U = (float)((uchar *)(result->imageData + i2*result->widthStep))[j2*result->nChannels + 1];
+					  V = (float)((uchar *)(result->imageData + i2*result->widthStep))[j2*result->nChannels + 2];
 					  mode[label*3+0] += L*100/255;
 					  mode[label*3+1] += 354*U/255-134;
 					  mode[label*3+2] += 256*V/255-140;
