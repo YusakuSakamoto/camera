@@ -19,8 +19,11 @@
 //#include "opencv2/core/utility.hpp"
 
 
-//##は文字列を連結するときusing namespace cv;
-
+//##は文字列を連結するとき
+#define minRegion 50
+#define spatial_radius 10
+#define color_radius 6.5
+#define color_radius2 color_radius*color_radius
 #define DECLARE_TIMING(s)  int64 timeStart_##s; double timeDiff_##s; double timeTally_##s = 0; int countTally_##s = 0
 #define START_TIMING(s)    timeStart_##s = cvGetTickCount()
 #define STOP_TIMING(s) 	   timeDiff_##s = (double)(cvGetTickCount() - timeStart_##s); timeTally_##s += timeDiff_##s; countTally_##s++
@@ -28,7 +31,6 @@
 #define GET_AVERAGE_TIMING(s)   (double)(countTally_##s ? timeTally_##s/ ((double)countTally_##s * cvGetTickFrequency()*1000.0) : 0)
 #define CLEAR_AVERAGE_TIMING(s) timeTally_##s = 0; countTally_##s = 0
 
-using namespace cv;
 
 // Distance used in Mean Shift
 inline int color_distance( cv::Mat& img, int x1, int y1, int x2, int y2 )
@@ -46,44 +48,47 @@ inline int color_distance( cv::Mat& img, int x1, int y1, int x2, int y2 )
 
 inline float color_distance( const float* a, const float* b)
 {
-	float l = a[0]-b[0], u=a[1]-b[1], v=a[2]-b[2];
-	return l*l+u*u+v*v;
+  float l = a[0]-b[0];
+  float u=a[1]-b[1];
+  float v=a[2]-b[2];
+  return l*l+u*u+v*v;
 }
 
-inline float color_distance( const Vec3f& a, const Vec3f& b)
+inline float color_distance( const cv::Vec3f& a, const cv::Vec3f& b)
 {
-	float l = a.val[0]-b.val[0], u=a.val[1]-b.val[1], v=a.val[2]-b.val[2];
-	return l*l+u*u+v*v;
+  float l = a.val[0]-b.val[0];
+  float u=a.val[1]-b.val[1];
+  float v=a.val[2]-b.val[2];
+  return l*l+u*u+v*v;
 }
 
 inline int spatial_distance( const CvPoint& q, const CvPoint& p ) 
 {
-	int a = q.x-p.x, b=q.y-p.y;
-	return a*a+b*b;
+  int a = q.x-p.x;
+  int b = q.y-p.y;
+  return a*a+b*b;
 }
 
 inline int getLabel( std::vector<int>& unionfind, int l ) 
 {
-	int r = unionfind[l];
-	if(unionfind[r] == r)
-		return r;
-	else
-	{
-		unionfind[l] = getLabel(unionfind, unionfind[r]);
-		return unionfind[l];
-	}
+  int r = unionfind[l];
+  if(unionfind[r] == r)
+	return r;
+  else{
+	unionfind[l] = getLabel(unionfind, unionfind[r]);
+	return unionfind[l];
+  }
 }
 
 inline int getLabel2( std::vector<int>& unionfind, int l ) 
 {
-	int r = unionfind[l];
-	if(r<0)
-		return r;
-	else
-	{
-		unionfind[l] = getLabel2(unionfind, r);
-		return unionfind[l];
-	}
+  int r = unionfind[l];
+  if(r<0)
+	return r;
+  else{
+	unionfind[l] = getLabel2(unionfind, r);
+	return unionfind[l];
+  }
 }
 
 class Meanshift{
@@ -109,10 +114,6 @@ class Meanshift{
   int oldRegionCount;
   cv::Mat in;
   cv::Mat out;
-  const int minRegion = 50;
-  const int spatial_radius = 10;
-  const double color_radius = 6.5;
-  const double color_radius2 = color_radius*color_radius;
   float *mode;
   int *modePointCounts;
 };

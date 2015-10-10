@@ -101,9 +101,9 @@ void Meanshift::meanshift_step_one(){
 	  for (int iters=0; shift > 3 && iters < 100; iters++){
 		icOld = ic;
 		jcOld = jc;
-		LOld = L;
-		UOld = U;
-		VOld = V;
+		LOld  = L;
+		UOld  = U;
+		VOld  = V;
 
 		float mi = 0;
 		float mj = 0;
@@ -112,8 +112,11 @@ void Meanshift::meanshift_step_one(){
 		float mV = 0;
 		int num=0;
 
-		int i2from = max(0,i-spatial_radius), i2to = min(height, i+spatial_radius+1);
-		int j2from = max(0,j-spatial_radius), j2to = min(width, j+spatial_radius+1);
+		int i2from = max(0,i-spatial_radius);
+		int i2to   = min(height, i+spatial_radius+1);
+		int j2from = max(0,j-spatial_radius);
+		int j2to   = min(width, j+spatial_radius+1);
+
 		for (int i2=i2from; i2 < i2to; i2++) {
 		  for (int j2=j2from; j2 < j2to; j2++) {
 			int a2 = out.step*i2 + j2*3;
