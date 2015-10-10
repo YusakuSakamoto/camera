@@ -13,5 +13,4 @@ private:
 	///////current and previous pointer/////
 	RAList	*cur, *prev;
 	unsigned char exists;
-
 };

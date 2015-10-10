@@ -237,26 +237,29 @@ void Meanshift::meanshift_step_three(int** labels){
 	// 1.Build RAM using classifiction structure
 	RAList *raList = new RAList [regionCount];
 	RAList *raPool = new RAList [10*regionCount];	//10 is hard coded!
+	
 	for(int i = 0; i < regionCount; i++){
 	  raList[i].label = i;
 	  raList[i].next = NULL;
 	}
+	
 	for(int i = 0; i < regionCount*10-1; i++){
 	  raPool[i].next = &raPool[i+1];
 	}
+
 	raPool[10*regionCount-1].next = NULL;
 	RAList *raNode1;
 	RAList *raNode2;
 	RAList *oldRAFreeList;
 	RAList *freeRAList = raPool;
-	  
+
 	for(int i=0; i < height; i++) 
 	  for(int j=0; j < width; j++){
 		if(i>0 && labels[i][j]!=labels[i-1][j]){
 		  // Get 2 free node
 		  raNode1			= freeRAList;
 		  raNode2			= freeRAList->next;
-		  oldRAFreeList	= freeRAList;
+		  oldRAFreeList	    = freeRAList;
 		  freeRAList		= freeRAList->next->next;
 		  // connect the two region
 		  raNode1->label	= labels[i][j];
@@ -270,7 +273,7 @@ void Meanshift::meanshift_step_three(int** labels){
 		  // Get 2 free node
 		  raNode1			= freeRAList;
 		  raNode2			= freeRAList->next;
-		  oldRAFreeList	= freeRAList;
+		  oldRAFreeList	    = freeRAList;
 		  freeRAList		= freeRAList->next->next;
 		  // connect the two region
 		  raNode1->label	= labels[i][j];
@@ -287,7 +290,8 @@ void Meanshift::meanshift_step_three(int** labels){
 	  RAList *neighbor = raList[i].next;
 	  while(neighbor){
 		if(color_distance(&mode[3*i], &mode[3*neighbor->label])<color_radius2){
-		  int iCanEl = i, neighCanEl	= neighbor->label;
+		  int iCanEl = i;
+		  int neighCanEl = neighbor->label;
 		  while(raList[iCanEl].label != iCanEl) iCanEl = raList[iCanEl].label;
 		  while(raList[neighCanEl].label != neighCanEl) neighCanEl = raList[neighCanEl].label;
 		  if(iCanEl<neighCanEl)
