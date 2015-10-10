@@ -25,14 +25,13 @@ int main(int argc, char* argv[])
   
   //ランダム色を代入
   for(int i=0;i<output.rows;i++){
-	for(int j=0;j<output.cols;j++)
-	  { 
-		int cl = ilabels[i][j];
-		int a = output.step*i + j*3;
-		output.data[a+0] = (color[cl])&255;
-		output.data[a+2] = (color[cl] >> 8)&255;
-		output.data[a+2] = (color[cl] >> 16)&255;
-	  }
+	for(int j=0;j<output.cols;j++){ 
+	  int cl = ilabels[i][j];
+	  int a = output.step*i + j*3;
+	  output.data[a+0] = (color[cl])&255;
+	  output.data[a+2] = (color[cl] >> 8)&255;
+	  output.data[a+2] = (color[cl] >> 16)&255;
+	}
   }  
 
   // 結果表示

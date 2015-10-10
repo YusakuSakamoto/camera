@@ -206,7 +206,7 @@ void Meanshift::meanshift_step_two( int **labels){
 			  neighStack.push(cvPoint(i2,j2));
 			  modePointCounts[label]++;
 
-			  a = out.step*i+j*3;
+			  a = out.step*i2+j2*3;
 			  L = out.data[a+0];
 			  U = out.data[a+1];
 			  V = out.data[a+2];
